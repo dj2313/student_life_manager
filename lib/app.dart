@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/light_theme.dart';
 import 'core/theme/dark_theme.dart';
+import 'widgets/main_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -19,9 +20,7 @@ class MyApp extends StatelessWidget {
           theme: LightTheme.theme,
           darkTheme: DarkTheme.theme,
           themeMode: ThemeMode.system,
-          home: const Scaffold(
-            body: Center(child: Text('Student Life Manager - Coming Soon')),
-          ),
+          home: const MainScreen(),
         );
       },
     );
