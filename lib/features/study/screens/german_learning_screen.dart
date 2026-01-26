@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../widgets/german_timer.dart';
@@ -11,191 +12,226 @@ class GermanLearningScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('🇩🇪 German A2 Learning')),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(AppSizes.paddingMD.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Study Plan Card
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(AppSizes.paddingLG.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.book, color: AppColors.primary, size: 24.sp),
-                        SizedBox(width: AppSizes.spacingMD.w),
-                        Text(
-                          '📚 Study Plan',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: AppSizes.spacingMD.h),
-                    Text(
-                      'Goal: Complete A2 by March',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    SizedBox(height: AppSizes.spacingLG.h),
-                    Text(
-                      'Weekly Schedule:',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: AppSizes.spacingSM.h),
-                    _buildScheduleItem('Mon-Fri: 2 hours/day'),
-                    _buildScheduleItem('Sat-Sun: 4 hours/day'),
-                    SizedBox(height: AppSizes.spacingLG.h),
-                    const StudyProgress(progress: 0.8, label: 'Progress: 80%'),
-                  ],
-                ),
+      backgroundColor: AppColors.backgroundLight,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildSliverAppBar(context),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeaderDescription(),
+                  SizedBox(height: 32.h),
+                  _buildSectionTitle('Academic Road'),
+                  SizedBox(height: 16.h),
+                  _buildGoalCard(context),
+                  SizedBox(height: 32.h),
+                  _buildSectionTitle('Active Mentorship'),
+                  SizedBox(height: 16.h),
+                  _buildTutorCard(context),
+                  SizedBox(height: 32.h),
+                  _buildActionRow(context),
+                  SizedBox(height: 100.h),
+                ],
               ),
             ),
-            SizedBox(height: AppSizes.spacingMD.h),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Tutor Card
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(AppSizes.paddingLG.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.person,
-                          color: AppColors.secondary,
-                          size: 24.sp,
-                        ),
-                        SizedBox(width: AppSizes.spacingMD.w),
-                        Text(
-                          '👨‍🏫 Tutor: Kalpesh Sir',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: AppSizes.spacingMD.h),
-                    Text(
-                      'Timings:',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: AppSizes.spacingSM.h),
-                    _buildTimingItem('Monday: 10:00 AM - 12:00 PM'),
-                    _buildTimingItem('Wednesday: 3:00 PM - 5:00 PM'),
-                    _buildTimingItem('Friday: 10:00 AM - 12:00 PM'),
-                    SizedBox(height: AppSizes.spacingLG.h),
-                    const GermanTimer(),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: AppSizes.spacingMD.h),
-
-            // Weekly Summary
-            Card(
-              color: AppColors.primary.withOpacity(0.1),
-              child: Padding(
-                padding: EdgeInsets.all(AppSizes.paddingLG.w),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '📊 This Week',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        Text(
-                          '8h / 12h target',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: AppSizes.spacingMD.h),
-                    LinearProgressIndicator(
-                      value: 8 / 12,
-                      minHeight: 8,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: AppSizes.spacingMD.h),
-
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.notes),
-                    label: const Text('Practice Notes'),
-                  ),
-                ),
-                SizedBox(width: AppSizes.spacingMD.w),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.note),
-                    label: const Text('Vocabulary'),
-                  ),
-                ),
-              ],
-            ),
-          ],
+  Widget _buildSliverAppBar(BuildContext context) {
+    return SliverAppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(
+          Icons.arrow_back_ios_rounded,
+          color: AppColors.primary,
+          size: 20,
+        ),
+        onPressed: () => Navigator.pop(context),
+      ),
+      centerTitle: true,
+      title: Text(
+        'Language Proficiency',
+        style: GoogleFonts.outfit(
+          fontSize: 16.sp,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
+          letterSpacing: 1.2,
         ),
       ),
     );
   }
 
-  Widget _buildScheduleItem(String text) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: AppSizes.spacingSM.h),
-      child: Row(
-        children: [
-          Icon(
-            Icons.schedule,
-            size: 16.sp,
+  Widget _buildHeaderDescription() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '🇩🇪 German A2',
+          style: GoogleFonts.outfit(
+            fontSize: 32.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
+          ),
+        ),
+        SizedBox(height: 4.h),
+        Text(
+          'Targeting Professional Working Proficiency by 2026',
+          style: GoogleFonts.inter(
+            fontSize: 14.sp,
             color: AppColors.textSecondaryLight,
           ),
-          SizedBox(width: AppSizes.spacingSM.w),
-          Text(text),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title.toUpperCase(),
+      style: GoogleFonts.inter(
+        fontSize: 11.sp,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textTertiaryLight,
+        letterSpacing: 1.5,
+      ),
+    );
+  }
+
+  Widget _buildGoalCard(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.flag_rounded, color: AppColors.secondary, size: 24.sp),
+              SizedBox(width: 12.w),
+              Text(
+                'Milestone: B1 Exam',
+                style: GoogleFonts.inter(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20.h),
+          const StudyProgress(progress: 0.8, label: 'Completion Velocity'),
+          SizedBox(height: 20.h),
+          Text(
+            'Schedule Intensity: 18h / week',
+            style: GoogleFonts.inter(
+              fontSize: 12.sp,
+              color: AppColors.textSecondaryLight,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTimingItem(String text) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: AppSizes.spacingSM.h),
-      child: Row(
-        children: [
-          Container(
-            width: 8.w,
-            height: 8.h,
-            decoration: const BoxDecoration(
-              color: AppColors.secondary,
-              shape: BoxShape.circle,
-            ),
+  Widget _buildTutorCard(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(24.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
-          SizedBox(width: AppSizes.spacingSM.w),
-          Text(text),
         ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.white12,
+                child: Icon(Icons.person_outline_rounded, color: Colors.white),
+              ),
+              SizedBox(width: 16.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Kalpesh Sir',
+                    style: GoogleFonts.inter(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Lead Language Coach',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.sp,
+                      color: Colors.white60,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: 24.h),
+          const GermanTimer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionRow(BuildContext context) {
+    return Row(
+      children: [
+        _buildActionBtn('Archives', Icons.folder_open_rounded),
+        SizedBox(width: 16.w),
+        _buildActionBtn('Vocab', Icons.abc_rounded),
+      ],
+    );
+  }
+
+  Widget _buildActionBtn(String label, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 16.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18.sp, color: AppColors.primary),
+            SizedBox(width: 8.w),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

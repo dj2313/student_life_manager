@@ -1,52 +1,102 @@
 import 'package:flutter/material.dart';
-import '../features/money/screens/money_dashboard.dart';
-import '../features/study/screens/study_dashboard.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 import '../features/home/screens/home_dashboard.dart';
 import '../features/tasks/screens/tasks_screen.dart';
+import '../features/money/screens/money_dashboard.dart';
+import '../features/study/screens/study_dashboard.dart';
 import '../features/more/screens/settings_screen.dart';
+import '../core/constants/app_colors.dart';
+import '../core/providers/navigation_provider.dart';
 
-class MainScreen extends StatefulWidget {
+class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = [
-    const MoneyDashboard(),
-    const StudyDashboard(),
-    const HomeDashboard(),
-    const TasksScreen(),
-    const SettingsScreen(),
+  final List<Widget> _screens = const [
+    HomeDashboard(),
+    TasksScreen(),
+    MoneyDashboard(),
+    StudyDashboard(),
+    SettingsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: 'Money',
+    return Consumer<NavigationProvider>(
+      builder: (context, navProvider, child) {
+        return Scaffold(
+          backgroundColor: AppColors.backgroundLight,
+          body: Stack(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: _screens[navProvider.currentIndex],
+              ),
+              Positioned(
+                bottom: 20,
+                left: 20,
+                right: 20,
+                child: _buildFloatingBottomBar(context, navProvider),
+              ),
+            ],
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Study'),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle),
-            label: 'Tasks',
+        );
+      },
+    );
+  }
+
+  Widget _buildFloatingBottomBar(
+    BuildContext context,
+    NavigationProvider provider,
+  ) {
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(35),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'More'),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildNavItem(provider, 0, Icons.home_rounded),
+          _buildNavItem(provider, 1, Icons.assignment_rounded),
+          _buildNavItem(provider, 2, Icons.account_balance_wallet_rounded),
+          _buildNavItem(provider, 3, Icons.school_rounded),
+          _buildNavItem(provider, 4, Icons.grid_view_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(NavigationProvider provider, int index, IconData icon) {
+    final isSelected = provider.currentIndex == index;
+    return GestureDetector(
+      onTap: () => provider.setIndex(index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? Colors.white : Colors.white.withOpacity(0.4),
+            size: isSelected ? 28 : 24,
+          ),
+          if (isSelected)
+            Container(
+              margin: EdgeInsets.only(top: 4.h),
+              width: 4,
+              height: 4,
+              decoration: const BoxDecoration(
+                color: AppColors.secondary,
+                shape: BoxShape.circle,
+              ),
+            ),
         ],
       ),
     );

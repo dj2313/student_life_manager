@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../core/constants/app_strings.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
+import '../providers/study_provider.dart';
+import '../../../data/models/lecture.dart';
 import 'german_learning_screen.dart';
 
 class StudyDashboard extends StatelessWidget {
@@ -10,196 +12,213 @@ class StudyDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.studyTitle)),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(AppSizes.paddingMD.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // German Learning Card - TOP PRIORITY
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const GermanLearningScreen(),
-                  ),
-                );
-              },
-              child: Card(
-                elevation: 4,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary,
-                        AppColors.primary.withOpacity(0.7),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusLG.r),
-                  ),
-                  padding: EdgeInsets.all(AppSizes.paddingLG.w),
+    return Consumer<StudyProvider>(
+      builder: (context, studyProvider, child) {
+        return Scaffold(
+          backgroundColor: AppColors.backgroundLight,
+          body: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildSliverAppBar(context),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _buildStudyStatus(context, studyProvider),
+                      SizedBox(height: 32.h),
+                      _buildSectionTitle('Active Preparation'),
+                      SizedBox(height: 16.h),
+                      _buildGermanFocusCard(context),
+                      SizedBox(height: 32.h),
+                      _buildSectionTitle('University Hub'),
+                      SizedBox(height: 16.h),
                       Row(
                         children: [
-                          Icon(
-                            Icons.translate,
-                            color: Colors.white,
-                            size: 32.sp,
-                          ),
-                          SizedBox(width: AppSizes.spacingMD.w),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '🇩🇪 German Learning - A2',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                                SizedBox(height: 4.h),
-                                Text(
-                                  'Next Class: Mon 10:00 AM',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontSize: 14.sp,
-                                  ),
-                                ),
-                              ],
+                            child: _buildUniSelectionCard(
+                              context,
+                              'Public Uni',
+                              Icons.account_balance_rounded,
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(
+                            child: _buildUniSelectionCard(
+                              context,
+                              'Private Uni',
+                              Icons.business_rounded,
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: AppSizes.spacingMD.h),
-                      Text(
-                        'Tutor: Kalpesh Sir',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14.sp,
+                      SizedBox(height: 32.h),
+                      _buildSectionTitle('Today\'s Lectures'),
+                      SizedBox(height: 16.h),
+                      ...studyProvider.todayLectures.map(
+                        (lecture) => _buildLectureItem(
+                          context,
+                          lecture,
+                          lecture.subject == 'German A2'
+                              ? AppColors.secondary
+                              : AppColors.primary,
                         ),
                       ),
-                      SizedBox(height: AppSizes.spacingSM.h),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: LinearProgressIndicator(
-                              value: 8 / 12,
-                              backgroundColor: Colors.white.withOpacity(0.3),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: AppSizes.spacingMD.w),
-                          Text(
-                            'Weekly Hours: 8/12',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: AppSizes.spacingMD.h),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const GermanLearningScreen(),
-                                  ),
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white),
-                              ),
-                              icon: const Icon(Icons.timer),
-                              label: const Text('Start Timer'),
-                            ),
-                          ),
-                          SizedBox(width: AppSizes.spacingSM.w),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {},
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white),
-                              ),
-                              icon: const Icon(Icons.calendar_today),
-                              label: const Text('View Schedule'),
-                            ),
-                          ),
-                        ],
-                      ),
+                      SizedBox(height: 100.h),
                     ],
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: AppSizes.spacingLG.h),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-            // Today's Schedule
-            Text(
-              '📅 Today\'s Schedule',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            SizedBox(height: AppSizes.spacingMD.h),
-            _buildLectureCard(
-              context,
-              '10:00',
-              'German Class',
-              'Kalpesh Sir',
-              AppColors.primary,
-            ),
-            SizedBox(height: AppSizes.spacingSM.h),
-            _buildLectureCard(
-              context,
-              '14:00',
-              'Public Uni Lecture',
-              'Advanced Mathematics',
-              AppColors.secondary,
-            ),
-            SizedBox(height: AppSizes.spacingLG.h),
+  Widget _buildSliverAppBar(BuildContext context) {
+    return SliverAppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      centerTitle: true,
+      title: Text(
+        'Education',
+        style: GoogleFonts.outfit(
+          fontSize: 16.sp,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
 
-            // My Universities
+  Widget _buildStudyStatus(BuildContext context, StudyProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Learning Velocity',
+          style: GoogleFonts.inter(
+            fontSize: 14.sp,
+            color: AppColors.textSecondaryLight,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Row(
+          children: [
             Text(
-              '🏛️ My Universities',
-              style: Theme.of(context).textTheme.headlineSmall,
+              provider.hoursLogged.toString(),
+              style: GoogleFonts.outfit(
+                fontSize: 48.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
             ),
-            SizedBox(height: AppSizes.spacingMD.h),
+            SizedBox(width: 8.w),
+            Padding(
+              padding: EdgeInsets.only(top: 12.h),
+              child: Text(
+                'hours logged this week',
+                style: GoogleFonts.inter(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondaryLight,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.outfit(
+        fontSize: 18.sp,
+        fontWeight: FontWeight.w600,
+        color: AppColors.primary,
+      ),
+    );
+  }
+
+  Widget _buildGermanFocusCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const GermanLearningScreen()),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(24.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24.r),
+          border: Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
             Row(
               children: [
-                Expanded(
-                  child: _buildUniversityCard(
-                    context,
-                    'Public\nUni',
-                    Icons.account_balance,
-                    AppColors.primary,
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.translate_rounded,
+                    color: AppColors.secondary,
+                    size: 24.sp,
                   ),
                 ),
-                SizedBox(width: AppSizes.spacingMD.w),
+                SizedBox(width: 16.w),
                 Expanded(
-                  child: _buildUniversityCard(
-                    context,
-                    'Private\nUni',
-                    Icons.business,
-                    AppColors.secondary,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'German A2',
+                        style: GoogleFonts.inter(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      Text(
+                        'Class with Kalpesh Sir',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          color: AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14.sp,
+                  color: AppColors.textTertiaryLight,
+                ),
+              ],
+            ),
+            SizedBox(height: 20.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildFocusStat('Goal', 'B1 Level'),
+                _buildFocusStat('Streak', '14 Days'),
+                _buildFocusStat('Next', 'Tomorrow'),
               ],
             ),
           ],
@@ -208,71 +227,114 @@ class StudyDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildLectureCard(
-    BuildContext context,
-    String time,
-    String title,
-    String subtitle,
-    Color color,
-  ) {
-    return Card(
-      child: ListTile(
-        leading: Container(
-          width: 60.w,
-          height: 60.h,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppSizes.radiusMD.r),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                time,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.sp,
-                ),
-              ),
-            ],
+  Widget _buildFocusStat(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11.sp,
+            color: AppColors.textSecondaryLight,
           ),
         ),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: Icon(Icons.chevron_right, color: color),
-        onTap: () {},
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUniSelectionCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 20.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.primary, size: 28.sp),
+          SizedBox(height: 12.h),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildUniversityCard(
+  Widget _buildLectureItem(
     BuildContext context,
-    String name,
-    IconData icon,
-    Color color,
+    Lecture lecture,
+    Color accentColor,
   ) {
-    return Card(
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(AppSizes.radiusLG.r),
-        child: Container(
-          padding: EdgeInsets.all(AppSizes.paddingLG.w),
-          child: Column(
-            children: [
-              Icon(icon, size: 48.sp, color: color),
-              SizedBox(height: AppSizes.spacingSM.h),
-              Text(
-                name,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4.w,
+            height: 32.h,
+            decoration: BoxDecoration(
+              color: accentColor,
+              borderRadius: BorderRadius.circular(2.r),
+            ),
           ),
-        ),
+          SizedBox(width: 16.w),
+          Text(
+            lecture.time,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+          SizedBox(width: 24.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  lecture.subject,
+                  style: GoogleFonts.inter(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+                Text(
+                  lecture.room,
+                  style: GoogleFonts.inter(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

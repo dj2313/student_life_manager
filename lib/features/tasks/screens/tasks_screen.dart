@@ -1,38 +1,295 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_strings.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../../core/constants/app_colors.dart';
+import '../providers/tasks_provider.dart';
+import '../../../data/models/todo.dart';
 
-class TasksScreen extends StatelessWidget {
+class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
 
   @override
+  State<TasksScreen> createState() => _TasksScreenState();
+}
+
+class _TasksScreenState extends State<TasksScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.tasksTitle)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return Consumer<TasksProvider>(
+      builder: (context, tasksProvider, child) {
+        return Scaffold(
+          backgroundColor: AppColors.backgroundLight,
+          body: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildSliverAppBar(),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildCompletionStatus(context, tasksProvider),
+                      SizedBox(height: 32.h),
+                      _buildTabBar(),
+                      SizedBox(height: 24.h),
+                    ],
+                  ),
+                ),
+              ),
+              SliverFillRemaining(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildTaskListView(context, tasksProvider.todayTasks, tasksProvider),
+                    _buildTaskListView(context, tasksProvider.tomorrowTasks, tasksProvider),
+                    _buildTaskListView(context, tasksProvider.weekTasks, tasksProvider),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          floatingActionButton: Padding(
+            padding: EdgeInsets.only(bottom: 80.h),
+            child: FloatingActionButton(
+              onPressed: () {
+                // TODO: Show Add Task Bottom Sheet
+              },
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      centerTitle: true,
+      title: Text(
+        'Objectives',
+        style: GoogleFonts.outfit(
+          fontSize: 16.sp,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompletionStatus(BuildContext context, TasksProvider provider) {
+    final ratio = provider.totalCount > 0 ? provider.completedCount / provider.totalCount : 0.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Daily Velocity',
+          style: GoogleFonts.inter(
+            fontSize: 14.sp,
+            color: AppColors.textSecondaryLight,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(
-              Icons.check_circle,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 24),
             Text(
-              '✓ ${AppStrings.tasksTitle}',
-              style: Theme.of(context).textTheme.headlineMedium,
+              '${provider.completedCount}/${provider.totalCount}',
+              style: GoogleFonts.outfit(
+                fontSize: 48.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Manage your daily tasks',
-              style: Theme.of(context).textTheme.bodyLarge,
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Text(
+                'Top 5% today',
+                style: GoogleFonts.inter(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.success,
+                ),
+              ),
             ),
           ],
         ),
+        SizedBox(height: 12.h),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4.r),
+          child: LinearProgressIndicator(
+            value: ratio,
+            minHeight: 6.h,
+            backgroundColor: AppColors.primary.withOpacity(0.05),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppColors.secondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabBar() {
+    return TabBar(
+      controller: _tabController,
+      indicatorWeight: 3,
+      indicatorColor: AppColors.secondary,
+      indicatorSize: TabBarIndicatorSize.label,
+      labelColor: AppColors.primary,
+      unselectedLabelColor: AppColors.textTertiaryLight,
+      labelStyle: GoogleFonts.outfit(
+        fontSize: 15.sp,
+        fontWeight: FontWeight.w600,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: const Icon(Icons.add),
+      unselectedLabelStyle: GoogleFonts.outfit(
+        fontSize: 15.sp,
+        fontWeight: FontWeight.w400,
+      ),
+      tabs: const [
+        Tab(text: 'Today'),
+        Tab(text: 'Tomorrow'),
+        Tab(text: 'Week'),
+      ],
+    );
+  }
+
+  Widget _buildTaskListView(BuildContext context, List<Todo> tasks, TasksProvider provider) {
+    if (tasks.isEmpty) {
+      return Center(
+        child: Text(
+          'No tasks for this period',
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondaryLight,
+          ),
+        ),
+      );
+    }
+
+    final priorityTasks = tasks.where((t) => t.priority == 'high').toList();
+    final regularTasks = tasks.where((t) => t.priority != 'high').toList();
+
+    return ListView(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      physics: const NeverScrollableScrollPhysics(),
+      children: [
+        if (priorityTasks.isNotEmpty) ...[
+          _buildSectionTitle('📌 Priority'),
+          ...priorityTasks.map((task) => _buildSimplifiedTask(context, task, provider)),
+          SizedBox(height: 24.h),
+        ],
+        if (regularTasks.isNotEmpty) ...[
+          _buildSectionTitle('Regular'),
+          ...regularTasks.map((task) => _buildSimplifiedTask(context, task, provider)),
+        ],
+        SizedBox(height: 120.h),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16.h),
+      child: Text(
+        title.toUpperCase(),
+        style: GoogleFonts.inter(
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w800,
+          color: AppColors.textTertiaryLight,
+          letterSpacing: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSimplifiedTask(
+    BuildContext context,
+    Todo task,
+    TasksProvider provider,
+  ) {
+    final color = task.priority == 'high' ? AppColors.primary : AppColors.accent;
+    return GestureDetector(
+      onTap: () => provider.toggleTaskStatus(task.id),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 4.w,
+              height: 24.h,
+              decoration: BoxDecoration(
+                color: task.completed ? Colors.grey[200] : color,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            SizedBox(width: 16.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    task.title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: task.completed ? Colors.grey : AppColors.primary,
+                      decoration: task.completed ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  Text(
+                    task.description ?? '',
+                    style: GoogleFonts.inter(
+                      fontSize: 11.sp,
+                      color: AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (task.completed)
+              Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 20.sp,
+              )
+            else
+              Icon(
+                Icons.circle_outlined,
+                color: AppColors.borderLight,
+                size: 20.sp,
+              ),
+          ],
+        ),
       ),
     );
   }
