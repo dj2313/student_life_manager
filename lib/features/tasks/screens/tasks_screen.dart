@@ -269,7 +269,7 @@ class _TasksScreenState extends State<TasksScreen>
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.borderLight),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Row(
           children: [

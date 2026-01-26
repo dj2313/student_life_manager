@@ -115,7 +115,7 @@ class NotesScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(24.r),
-          border: Border.all(color: AppColors.borderLight),
+          border: Border.all(color: Theme.of(context).dividerColor),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow.withOpacity(0.03),

@@ -361,7 +361,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
             decoration: BoxDecoration(
               color: cardColor,
               borderRadius: BorderRadius.circular(20.r),
-              border: Border.all(color: AppColors.borderLight, width: 1.2),
+              border: Border.all(
+                color: Theme.of(context).dividerColor,
+                width: 1.2,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.shadow.withOpacity(0.04),
@@ -395,7 +398,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: AppColors.borderLight, width: 1.2),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1.2),
       ),
       child: Column(
         children: provider.bureaucracyTasks
@@ -505,7 +508,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: AppColors.borderLight, width: 1.2),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1.2),
       ),
       child: Row(
         children: [

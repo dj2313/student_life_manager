@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
-import '../constants/app_sizes.dart';
 
 class PremiumTheme {
   static ThemeData get light {
@@ -15,8 +14,12 @@ class PremiumTheme {
         surface: Colors.white,
         background: AppColors.backgroundLight,
         error: AppColors.error,
+        onPrimary: Colors.white,
+        onSurface: AppColors.textPrimaryLight,
+        onBackground: AppColors.textPrimaryLight,
       ),
       scaffoldBackgroundColor: AppColors.backgroundLight,
+      dividerColor: AppColors.borderLight,
 
       appBarTheme: AppBarTheme(
         elevation: 0,
@@ -30,9 +33,8 @@ class PremiumTheme {
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness:
-              Brightness.dark, // Dark icons for light theme
-          statusBarBrightness: Brightness.light, // For iOS
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
         ),
       ),
 
@@ -94,13 +96,18 @@ class PremiumTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.primaryLight,
+        primary: AppColors
+            .textPrimaryDark, // Light color for primary text/icons in dark mode
         secondary: AppColors.secondary,
         surface: AppColors.cardDark,
         background: AppColors.backgroundDark,
         error: AppColors.error,
+        onPrimary: AppColors.primaryDark,
+        onSurface: AppColors.textPrimaryDark,
+        onBackground: AppColors.textPrimaryDark,
       ),
       scaffoldBackgroundColor: AppColors.backgroundDark,
+      dividerColor: Colors.white10,
 
       appBarTheme: AppBarTheme(
         elevation: 0,
@@ -114,9 +121,8 @@ class PremiumTheme {
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness:
-              Brightness.light, // Light icons for dark theme
-          statusBarBrightness: Brightness.dark, // For iOS
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
         ),
       ),
 
@@ -145,8 +151,24 @@ class PremiumTheme {
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.white70),
-        bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.white70),
+        bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.white),
+        bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.white),
+      ),
+
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.secondary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

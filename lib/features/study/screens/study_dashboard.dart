@@ -161,7 +161,7 @@ class StudyDashboard extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(24.r),
-          border: Border.all(color: AppColors.borderLight),
+          border: Border.all(color: Theme.of(context).dividerColor),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow.withOpacity(0.05),
@@ -267,7 +267,7 @@ class StudyDashboard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -300,7 +300,7 @@ class StudyDashboard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [

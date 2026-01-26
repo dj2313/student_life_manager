@@ -250,7 +250,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.borderLight),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Row(
           children: [
@@ -312,7 +312,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
