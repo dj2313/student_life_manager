@@ -34,11 +34,11 @@ class _TasksScreenState extends State<TasksScreen>
     return Consumer<TasksProvider>(
       builder: (context, tasksProvider, child) {
         return Scaffold(
-          backgroundColor: AppColors.backgroundLight,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              _buildSliverAppBar(),
+              _buildSliverAppBar(context),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -47,7 +47,7 @@ class _TasksScreenState extends State<TasksScreen>
                     children: [
                       _buildCompletionStatus(context, tasksProvider),
                       SizedBox(height: 32.h),
-                      _buildTabBar(),
+                      _buildTabBar(context),
                       SizedBox(height: 24.h),
                     ],
                   ),
@@ -57,9 +57,21 @@ class _TasksScreenState extends State<TasksScreen>
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildTaskListView(context, tasksProvider.todayTasks, tasksProvider),
-                    _buildTaskListView(context, tasksProvider.tomorrowTasks, tasksProvider),
-                    _buildTaskListView(context, tasksProvider.weekTasks, tasksProvider),
+                    _buildTaskListView(
+                      context,
+                      tasksProvider.todayTasks,
+                      tasksProvider,
+                    ),
+                    _buildTaskListView(
+                      context,
+                      tasksProvider.tomorrowTasks,
+                      tasksProvider,
+                    ),
+                    _buildTaskListView(
+                      context,
+                      tasksProvider.weekTasks,
+                      tasksProvider,
+                    ),
                   ],
                 ),
               ),
@@ -80,7 +92,7 @@ class _TasksScreenState extends State<TasksScreen>
     );
   }
 
-  Widget _buildSliverAppBar() {
+  Widget _buildSliverAppBar(BuildContext context) {
     return SliverAppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -90,7 +102,7 @@ class _TasksScreenState extends State<TasksScreen>
         style: GoogleFonts.outfit(
           fontSize: 16.sp,
           fontWeight: FontWeight.w600,
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           letterSpacing: 1.2,
         ),
       ),
@@ -98,7 +110,11 @@ class _TasksScreenState extends State<TasksScreen>
   }
 
   Widget _buildCompletionStatus(BuildContext context, TasksProvider provider) {
-    final ratio = provider.totalCount > 0 ? provider.completedCount / provider.totalCount : 0.0;
+    final textColor = Theme.of(context).colorScheme.primary;
+    final ratio = provider.totalCount > 0
+        ? provider.completedCount / provider.totalCount
+        : 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -118,7 +134,7 @@ class _TasksScreenState extends State<TasksScreen>
               style: GoogleFonts.outfit(
                 fontSize: 48.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                color: textColor,
               ),
             ),
             Container(
@@ -144,7 +160,7 @@ class _TasksScreenState extends State<TasksScreen>
           child: LinearProgressIndicator(
             value: ratio,
             minHeight: 6.h,
-            backgroundColor: AppColors.primary.withOpacity(0.05),
+            backgroundColor: textColor.withOpacity(0.05),
             valueColor: const AlwaysStoppedAnimation<Color>(
               AppColors.secondary,
             ),
@@ -154,13 +170,15 @@ class _TasksScreenState extends State<TasksScreen>
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.primary;
+
     return TabBar(
       controller: _tabController,
       indicatorWeight: 3,
       indicatorColor: AppColors.secondary,
       indicatorSize: TabBarIndicatorSize.label,
-      labelColor: AppColors.primary,
+      labelColor: textColor,
       unselectedLabelColor: AppColors.textTertiaryLight,
       labelStyle: GoogleFonts.outfit(
         fontSize: 15.sp,
@@ -178,14 +196,16 @@ class _TasksScreenState extends State<TasksScreen>
     );
   }
 
-  Widget _buildTaskListView(BuildContext context, List<Todo> tasks, TasksProvider provider) {
+  Widget _buildTaskListView(
+    BuildContext context,
+    List<Todo> tasks,
+    TasksProvider provider,
+  ) {
     if (tasks.isEmpty) {
       return Center(
         child: Text(
           'No tasks for this period',
-          style: GoogleFonts.inter(
-            color: AppColors.textSecondaryLight,
-          ),
+          style: GoogleFonts.inter(color: AppColors.textSecondaryLight),
         ),
       );
     }
@@ -199,12 +219,16 @@ class _TasksScreenState extends State<TasksScreen>
       children: [
         if (priorityTasks.isNotEmpty) ...[
           _buildSectionTitle('📌 Priority'),
-          ...priorityTasks.map((task) => _buildSimplifiedTask(context, task, provider)),
+          ...priorityTasks.map(
+            (task) => _buildSimplifiedTask(context, task, provider),
+          ),
           SizedBox(height: 24.h),
         ],
         if (regularTasks.isNotEmpty) ...[
           _buildSectionTitle('Regular'),
-          ...regularTasks.map((task) => _buildSimplifiedTask(context, task, provider)),
+          ...regularTasks.map(
+            (task) => _buildSimplifiedTask(context, task, provider),
+          ),
         ],
         SizedBox(height: 120.h),
       ],
@@ -231,14 +255,19 @@ class _TasksScreenState extends State<TasksScreen>
     Todo task,
     TasksProvider provider,
   ) {
-    final color = task.priority == 'high' ? AppColors.primary : AppColors.accent;
+    final cardColor = Theme.of(context).cardTheme.color;
+    final textColor = Theme.of(context).colorScheme.primary;
+    final color = task.priority == 'high'
+        ? AppColors.primary
+        : AppColors.accent;
+
     return GestureDetector(
       onTap: () => provider.toggleTaskStatus(task.id),
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(color: AppColors.borderLight),
         ),
@@ -262,17 +291,20 @@ class _TasksScreenState extends State<TasksScreen>
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
-                      color: task.completed ? Colors.grey : AppColors.primary,
-                      decoration: task.completed ? TextDecoration.lineThrough : null,
+                      color: task.completed ? Colors.grey : textColor,
+                      decoration: task.completed
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
                   ),
-                  Text(
-                    task.description ?? '',
-                    style: GoogleFonts.inter(
-                      fontSize: 11.sp,
-                      color: AppColors.textSecondaryLight,
+                  if (task.description != null && task.description!.isNotEmpty)
+                    Text(
+                      task.description!,
+                      style: GoogleFonts.inter(
+                        fontSize: 11.sp,
+                        color: AppColors.textSecondaryLight,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

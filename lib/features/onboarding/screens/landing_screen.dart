@@ -2,24 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../widgets/main_screen.dart';
+import '../../../core/providers/theme_provider.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Ensuring status bar is visible and icons are dark (for light background)
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness:
-            Brightness.dark, // Dark icons for battery, time, etc.
-        statusBarBrightness: Brightness.light,
+        statusBarIconBrightness: themeProvider.isDarkMode
+            ? Brightness.light
+            : Brightness.dark,
+        statusBarBrightness: themeProvider.isDarkMode
+            ? Brightness.dark
+            : Brightness.light,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.backgroundLight,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),

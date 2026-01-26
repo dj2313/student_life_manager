@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../features/home/screens/home_dashboard.dart';
@@ -8,6 +9,7 @@ import '../features/study/screens/study_dashboard.dart';
 import '../features/more/screens/settings_screen.dart';
 import '../core/constants/app_colors.dart';
 import '../core/providers/navigation_provider.dart';
+import '../core/providers/theme_provider.dart';
 
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
@@ -22,23 +24,34 @@ class MainScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NavigationProvider>(
-      builder: (context, navProvider, child) {
-        return Scaffold(
-          backgroundColor: AppColors.backgroundLight,
-          body: Stack(
-            children: [
-              SafeArea(
-                bottom: false,
-                child: _screens[navProvider.currentIndex],
-              ),
-              Positioned(
-                bottom: 20,
-                left: 20,
-                right: 20,
-                child: _buildFloatingBottomBar(context, navProvider),
-              ),
-            ],
+    return Consumer2<NavigationProvider, ThemeProvider>(
+      builder: (context, navProvider, themeProvider, child) {
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: themeProvider.isDarkMode
+                ? Brightness.light
+                : Brightness.dark,
+            statusBarBrightness: themeProvider.isDarkMode
+                ? Brightness.dark
+                : Brightness.light,
+          ),
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: Stack(
+              children: [
+                SafeArea(
+                  bottom: false,
+                  child: _screens[navProvider.currentIndex],
+                ),
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: _buildFloatingBottomBar(context, navProvider),
+                ),
+              ],
+            ),
           ),
         );
       },

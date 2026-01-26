@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../providers/money_provider.dart';
 import '../../../data/models/expense.dart';
 import 'package:intl/intl.dart';
+import 'india_tracker_screen.dart';
 
 class MoneyDashboard extends StatelessWidget {
   const MoneyDashboard({super.key});
@@ -15,7 +16,7 @@ class MoneyDashboard extends StatelessWidget {
     return Consumer<MoneyProvider>(
       builder: (context, moneyProvider, child) {
         return Scaffold(
-          backgroundColor: AppColors.backgroundLight,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
@@ -35,10 +36,10 @@ class MoneyDashboard extends StatelessWidget {
                       SizedBox(height: 40.h),
                       _buildBudgetPreview(context, moneyProvider),
                       SizedBox(height: 40.h),
+                      _buildIndiaTrackerCard(context),
+                      SizedBox(height: 40.h),
                       _buildTransactionsSection(context, moneyProvider),
-                      SizedBox(
-                        height: 120.h,
-                      ), // Spacing for floating bottom bar
+                      SizedBox(height: 120.h),
                     ],
                   ),
                 ),
@@ -51,6 +52,7 @@ class MoneyDashboard extends StatelessWidget {
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.primary;
     return SliverAppBar(
       expandedHeight: 40.h,
       backgroundColor: Colors.transparent,
@@ -61,7 +63,7 @@ class MoneyDashboard extends StatelessWidget {
         style: GoogleFonts.outfit(
           fontSize: 16.sp,
           fontWeight: FontWeight.w600,
-          color: AppColors.primary,
+          color: textColor,
           letterSpacing: 1.2,
         ),
       ),
@@ -69,7 +71,7 @@ class MoneyDashboard extends StatelessWidget {
         IconButton(
           icon: Icon(
             Icons.notifications_none_outlined,
-            color: AppColors.primary,
+            color: textColor,
             size: 24.sp,
           ),
           onPressed: () {},
@@ -80,6 +82,7 @@ class MoneyDashboard extends StatelessWidget {
   }
 
   Widget _buildBalanceSection(BuildContext context, MoneyProvider provider) {
+    final textColor = Theme.of(context).colorScheme.primary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -109,7 +112,7 @@ class MoneyDashboard extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 48.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                color: textColor,
                 letterSpacing: -1,
               ),
             ),
@@ -147,9 +150,10 @@ class MoneyDashboard extends StatelessWidget {
   }
 
   Widget _buildQuickActionChips(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.primary;
     return Row(
       children: [
-        _buildActionChip(context, Icons.add, 'Expense', AppColors.primary),
+        _buildActionChip(context, Icons.add, 'Expense', textColor),
         SizedBox(width: 12.w),
         _buildActionChip(
           context,
@@ -201,6 +205,7 @@ class MoneyDashboard extends StatelessWidget {
   }
 
   Widget _buildAccountsSection(BuildContext context, MoneyProvider provider) {
+    final textColor = Theme.of(context).colorScheme.primary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -212,13 +217,13 @@ class MoneyDashboard extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                color: textColor,
               ),
             ),
             Icon(
               Icons.arrow_forward_ios_rounded,
               size: 14.sp,
-              color: AppColors.primary,
+              color: textColor,
             ),
           ],
         ),
@@ -228,13 +233,13 @@ class MoneyDashboard extends StatelessWidget {
           'Blocked Account',
           '€${provider.blockedAccountBalance.toStringAsFixed(2)}',
           Icons.verified_user_outlined,
-          AppColors.primary,
+          textColor,
         ),
         SizedBox(height: 12.h),
         _buildMiniAccountTile(
           context,
           'Personal Account',
-          '€450.00', // Mock personal account balance
+          '€450.00',
           Icons.wallet_outlined,
           AppColors.secondary,
         ),
@@ -249,10 +254,13 @@ class MoneyDashboard extends StatelessWidget {
     IconData icon,
     Color color,
   ) {
+    final cardColor = Theme.of(context).cardTheme.color;
+    final textColor = Theme.of(context).colorScheme.primary;
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: AppColors.borderLight, width: 1),
       ),
@@ -273,7 +281,7 @@ class MoneyDashboard extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
-                color: AppColors.primary,
+                color: textColor,
               ),
             ),
           ),
@@ -282,7 +290,7 @@ class MoneyDashboard extends StatelessWidget {
             style: GoogleFonts.outfit(
               fontSize: 15.sp,
               fontWeight: FontWeight.w700,
-              color: AppColors.primary,
+              color: textColor,
             ),
           ),
         ],
@@ -366,6 +374,7 @@ class MoneyDashboard extends StatelessWidget {
     BuildContext context,
     MoneyProvider provider,
   ) {
+    final textColor = Theme.of(context).colorScheme.primary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -377,7 +386,7 @@ class MoneyDashboard extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                color: textColor,
               ),
             ),
             Text(
@@ -407,11 +416,14 @@ class MoneyDashboard extends StatelessWidget {
   }
 
   Widget _buildTransactionItem(BuildContext context, Expense expense) {
+    final cardColor = Theme.of(context).cardTheme.color;
+    final textColor = Theme.of(context).colorScheme.primary;
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: AppColors.borderLight),
       ),
@@ -439,7 +451,7 @@ class MoneyDashboard extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: textColor,
                   ),
                 ),
                 Text(
@@ -480,5 +492,76 @@ class MoneyDashboard extends StatelessWidget {
       default:
         return Icons.payment_rounded;
     }
+  }
+
+  Widget _buildIndiaTrackerCard(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.primary;
+    final cardColor = Theme.of(context).cardTheme.color;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const IndiaTrackerScreen()),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(24.w),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(24.r),
+          border: Border.all(color: AppColors.borderLight, width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF9966).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: const Icon(
+                Icons.flight_takeoff_rounded,
+                color: Color(0xFFFF9966),
+              ),
+            ),
+            SizedBox(width: 20.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'India → Germany',
+                    style: GoogleFonts.outfit(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                  Text(
+                    'Inventory & Travel Logs',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.sp,
+                      color: AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textTertiaryLight,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -15,7 +15,7 @@ class StudyDashboard extends StatelessWidget {
     return Consumer<StudyProvider>(
       builder: (context, studyProvider, child) {
         return Scaffold(
-          backgroundColor: AppColors.backgroundLight,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
@@ -28,11 +28,11 @@ class StudyDashboard extends StatelessWidget {
                     children: [
                       _buildStudyStatus(context, studyProvider),
                       SizedBox(height: 32.h),
-                      _buildSectionTitle('Active Preparation'),
+                      _buildSectionTitle(context, 'Active Preparation'),
                       SizedBox(height: 16.h),
                       _buildGermanFocusCard(context),
                       SizedBox(height: 32.h),
-                      _buildSectionTitle('University Hub'),
+                      _buildSectionTitle(context, 'University Hub'),
                       SizedBox(height: 16.h),
                       Row(
                         children: [
@@ -54,7 +54,7 @@ class StudyDashboard extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 32.h),
-                      _buildSectionTitle('Today\'s Lectures'),
+                      _buildSectionTitle(context, 'Today\'s Lectures'),
                       SizedBox(height: 16.h),
                       ...studyProvider.todayLectures.map(
                         (lecture) => _buildLectureItem(
@@ -62,7 +62,7 @@ class StudyDashboard extends StatelessWidget {
                           lecture,
                           lecture.subject == 'German A2'
                               ? AppColors.secondary
-                              : AppColors.primary,
+                              : Theme.of(context).colorScheme.primary,
                         ),
                       ),
                       SizedBox(height: 100.h),
@@ -87,7 +87,7 @@ class StudyDashboard extends StatelessWidget {
         style: GoogleFonts.outfit(
           fontSize: 16.sp,
           fontWeight: FontWeight.w600,
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           letterSpacing: 1.2,
         ),
       ),
@@ -95,6 +95,7 @@ class StudyDashboard extends StatelessWidget {
   }
 
   Widget _buildStudyStatus(BuildContext context, StudyProvider provider) {
+    final textColor = Theme.of(context).colorScheme.primary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -113,7 +114,7 @@ class StudyDashboard extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 48.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                color: textColor,
               ),
             ),
             SizedBox(width: 8.w),
@@ -133,18 +134,21 @@ class StudyDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
       style: GoogleFonts.outfit(
         fontSize: 18.sp,
         fontWeight: FontWeight.w600,
-        color: AppColors.primary,
+        color: Theme.of(context).colorScheme.primary,
       ),
     );
   }
 
   Widget _buildGermanFocusCard(BuildContext context) {
+    final cardColor = Theme.of(context).cardTheme.color;
+    final textColor = Theme.of(context).colorScheme.primary;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -155,7 +159,7 @@ class StudyDashboard extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(24.r),
           border: Border.all(color: AppColors.borderLight),
           boxShadow: [
@@ -192,7 +196,7 @@ class StudyDashboard extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                          color: textColor,
                         ),
                       ),
                       Text(
@@ -216,9 +220,9 @@ class StudyDashboard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildFocusStat('Goal', 'B1 Level'),
-                _buildFocusStat('Streak', '14 Days'),
-                _buildFocusStat('Next', 'Tomorrow'),
+                _buildFocusStat(context, 'Goal', 'B1 Level'),
+                _buildFocusStat(context, 'Streak', '14 Days'),
+                _buildFocusStat(context, 'Next', 'Tomorrow'),
               ],
             ),
           ],
@@ -227,7 +231,7 @@ class StudyDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildFocusStat(String label, String value) {
+  Widget _buildFocusStat(BuildContext context, String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -243,7 +247,7 @@ class StudyDashboard extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 14.sp,
             fontWeight: FontWeight.w600,
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
       ],
@@ -255,23 +259,26 @@ class StudyDashboard extends StatelessWidget {
     String title,
     IconData icon,
   ) {
+    final cardColor = Theme.of(context).cardTheme.color;
+    final textColor = Theme.of(context).colorScheme.primary;
+
     return Container(
       padding: EdgeInsets.symmetric(vertical: 20.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         children: [
-          Icon(icon, color: AppColors.primary, size: 28.sp),
+          Icon(icon, color: textColor, size: 28.sp),
           SizedBox(height: 12.h),
           Text(
             title,
             style: GoogleFonts.inter(
               fontSize: 13.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary,
+              color: textColor,
             ),
           ),
         ],
@@ -284,11 +291,14 @@ class StudyDashboard extends StatelessWidget {
     Lecture lecture,
     Color accentColor,
   ) {
+    final cardColor = Theme.of(context).cardTheme.color;
+    final textColor = Theme.of(context).colorScheme.primary;
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(color: AppColors.borderLight),
       ),
@@ -308,7 +318,7 @@ class StudyDashboard extends StatelessWidget {
             style: GoogleFonts.jetBrainsMono(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary,
+              color: textColor,
             ),
           ),
           SizedBox(width: 24.w),
@@ -321,7 +331,7 @@ class StudyDashboard extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: textColor,
                   ),
                 ),
                 Text(

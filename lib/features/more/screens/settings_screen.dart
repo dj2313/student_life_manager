@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/providers/theme_provider.dart';
 import 'calculator_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -10,13 +13,29 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final textColor = Theme.of(context).colorScheme.primary;
+
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.moreTitle), elevation: 0),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          AppStrings.moreTitle,
+          style: GoogleFonts.outfit(
+            fontSize: 20.sp,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+      ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         children: [
-          _buildHeader(),
-          _buildSection('Finance & Tools', [
+          _buildHeader(context),
+          _buildSection(context, 'Finance & Tools', [
             _buildSettingsTile(
               context,
               Icons.currency_exchange,
@@ -38,44 +57,50 @@ class SettingsScreen extends StatelessWidget {
               AppColors.secondary,
             ),
           ]),
-          _buildSection('Preferences', [
+          _buildSection(context, 'Preferences', [
             _buildSettingsTile(
               context,
-              Icons.dark_mode,
-              AppStrings.darkMode,
+              themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              'Appearance',
               AppColors.accent,
+              trailing: Switch.adaptive(
+                value: themeProvider.isDarkMode,
+                onChanged: (value) => themeProvider.toggleTheme(),
+                activeColor: AppColors.secondary,
+              ),
+              onTap: () => themeProvider.toggleTheme(),
             ),
             _buildSettingsTile(
               context,
-              Icons.notifications,
+              Icons.notifications_active_outlined,
               AppStrings.notifications,
               AppColors.info,
             ),
           ]),
-          _buildSection('Data Management', [
+          _buildSection(context, 'Data Management', [
             _buildSettingsTile(
               context,
-              Icons.backup,
+              Icons.backup_outlined,
               AppStrings.backup,
               Colors.brown,
             ),
             _buildSettingsTile(
               context,
-              Icons.file_download,
+              Icons.file_download_outlined,
               AppStrings.exportData,
               Colors.blueGrey,
             ),
           ]),
-          _buildSection('Support & Info', [
+          _buildSection(context, 'Support & Info', [
             _buildSettingsTile(
               context,
-              Icons.info,
+              Icons.info_outline,
               AppStrings.about,
               Colors.grey,
             ),
             _buildSettingsTile(
               context,
-              Icons.contact_support,
+              Icons.contact_support_outlined,
               AppStrings.support,
               AppColors.error,
             ),
@@ -84,22 +109,29 @@ class SettingsScreen extends StatelessWidget {
           Center(
             child: Text(
               'Version 1.0.0',
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 color: AppColors.textTertiaryLight,
                 fontSize: 12.sp,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          SizedBox(height: 20.h),
+          SizedBox(height: 120.h),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.primary;
     return Container(
       padding: EdgeInsets.all(AppSizes.paddingLG.w),
-      decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.05)),
+      margin: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(color: AppColors.borderLight, width: 1.2),
+      ),
       child: Row(
         children: [
           CircleAvatar(
@@ -113,11 +145,15 @@ class SettingsScreen extends StatelessWidget {
             children: [
               Text(
                 'Student User',
-                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
+                style: GoogleFonts.outfit(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
               ),
               Text(
                 'student@example.com',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 14.sp,
                   color: AppColors.textSecondaryLight,
                 ),
@@ -129,24 +165,23 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, List<Widget> children) {
+  Widget _buildSection(
+    BuildContext context,
+    String title,
+    List<Widget> children,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSizes.paddingMD.w,
-            20.h,
-            AppSizes.paddingMD.w,
-            10.h,
-          ),
+          padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 10.h),
           child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
-              letterSpacing: 1.2,
+            title.toUpperCase(),
+            style: GoogleFonts.inter(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textTertiaryLight,
+              letterSpacing: 1.5,
             ),
           ),
         ),
@@ -161,21 +196,34 @@ class SettingsScreen extends StatelessWidget {
     String title,
     Color color, {
     VoidCallback? onTap,
+    Widget? trailing,
   }) {
+    final textColor = Theme.of(context).colorScheme.primary;
     return ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: 24.w),
       leading: Container(
         padding: EdgeInsets.all(8.w),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8.r),
+          borderRadius: BorderRadius.circular(10.r),
         ),
-        child: Icon(icon, color: color, size: 20.sp),
+        child: Icon(icon, color: color, size: 22.sp),
       ),
       title: Text(
         title,
-        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500),
+        style: GoogleFonts.inter(
+          fontSize: 16.sp,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+        ),
       ),
-      trailing: Icon(Icons.chevron_right, size: 20.sp, color: Colors.grey),
+      trailing:
+          trailing ??
+          Icon(
+            Icons.chevron_right,
+            size: 20.sp,
+            color: AppColors.textTertiaryLight,
+          ),
       onTap: onTap ?? () {},
     );
   }
