@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:uuid/uuid.dart';
 import '../../../data/models/lecture.dart';
 import '../../../data/models/study_models.dart';
+import '../../../data/models/university.dart';
 
 class StudyProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -12,6 +12,8 @@ class StudyProvider with ChangeNotifier {
   String _germanLevel = 'A2';
   double _hoursLoggedThisWeek = 8;
   double _weeklyTargetHours = 12;
+  double _germanClassFees = 250.0;
+  Map<String, DateTime> _examDates = {'A1': DateTime(2026, 2, 16)};
 
   Map<String, String> _germanProgress = {
     'A1': 'Cleared',
@@ -25,16 +27,18 @@ class StudyProvider with ChangeNotifier {
   List<Lecture> _todayLectures = [];
   List<GermanSession> _sessions = [];
   List<StudyGoal> _goals = [];
-  List<Map<String, dynamic>> _universities = [];
+  List<University> _universities = [];
 
   String get germanLevel => _germanLevel;
   Map<String, String> get germanProgress => _germanProgress;
   double get hoursLoggedThisWeek => _hoursLoggedThisWeek;
   double get weeklyTargetHours => _weeklyTargetHours;
+  double get germanClassFees => _germanClassFees;
+  Map<String, DateTime> get examDates => _examDates;
   List<Lecture> get todayLectures => _todayLectures;
   List<GermanSession> get sessions => _sessions;
   List<StudyGoal> get goals => _goals;
-  List<Map<String, dynamic>> get universities => _universities;
+  List<University> get universities => _universities;
 
   String get _uid => _auth.currentUser?.uid ?? 'guest_user';
 
@@ -130,9 +134,7 @@ class StudyProvider with ChangeNotifier {
           .get();
 
       _universities = snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return data;
+        return University.fromJson({...doc.data(), 'id': doc.id});
       }).toList();
 
       notifyListeners();
@@ -141,41 +143,34 @@ class StudyProvider with ChangeNotifier {
     }
   }
 
-  List<Map<String, dynamic>> getUniversitiesByType(String type) {
-    return _universities.where((uni) => uni['type'] == type).toList();
+  List<University> getUniversitiesByType(String type) {
+    return _universities.where((uni) => uni.type == type).toList();
   }
 
-  Future<void> addUniversity({
-    required String type,
-    required String name,
-    String? location,
-    String? program,
-    String? notes,
-  }) async {
+  Future<void> addUniversity(University university) async {
     try {
-      final id = const Uuid().v4();
-      final university = {
-        'id': id,
-        'type': type,
-        'name': name,
-        'location': location,
-        'program': program,
-        'notes': notes,
-        'createdAt': DateTime.now().toIso8601String(),
-      };
-
       await _firestore
           .collection('users')
           .doc(_uid)
           .collection('universities')
-          .doc(id)
-          .set(university);
+          .doc(university.id)
+          .set(university.toJson());
 
       _universities.add(university);
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding university: $e');
     }
+  }
+
+  void updateGermanFees(double fees) {
+    _germanClassFees = fees;
+    notifyListeners();
+  }
+
+  void updateExamDate(String level, DateTime date) {
+    _examDates[level] = date;
+    notifyListeners();
   }
 
   Future<void> updateUniversity(String id, Map<String, dynamic> updates) async {
@@ -187,9 +182,12 @@ class StudyProvider with ChangeNotifier {
           .doc(id)
           .update(updates);
 
-      final index = _universities.indexWhere((uni) => uni['id'] == id);
+      final index = _universities.indexWhere((uni) => uni.id == id);
       if (index != -1) {
-        _universities[index] = {..._universities[index], ...updates};
+        _universities[index] = University.fromJson({
+          ..._universities[index].toJson(),
+          ...updates,
+        });
         notifyListeners();
       }
     } catch (e) {
@@ -206,7 +204,7 @@ class StudyProvider with ChangeNotifier {
           .doc(id)
           .delete();
 
-      _universities.removeWhere((uni) => uni['id'] == id);
+      _universities.removeWhere((uni) => uni.id == id);
       notifyListeners();
     } catch (e) {
       debugPrint('Error deleting university: $e');

@@ -36,6 +36,8 @@ class GermanLearningScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildProgressCard(context, provider),
+                SizedBox(height: 24.h),
+                _buildFeesCard(context, provider),
                 SizedBox(height: 32.h),
                 _buildSectionTitle('LEVEL STATUS'),
                 SizedBox(height: 16.h),
@@ -148,10 +150,77 @@ class GermanLearningScreen extends StatelessWidget {
             ),
           ),
           SizedBox(height: 12.h),
-          Text(
-            'Keep going! ${(progress * 100).toInt()}% of weekly goal achieved.',
-            style: GoogleFonts.inter(color: Colors.white, fontSize: 12.sp),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Keep going! ${(progress * 100).toInt()}% achieved.',
+                style: GoogleFonts.inter(color: Colors.white, fontSize: 12.sp),
+              ),
+              if (provider.examDates.containsKey(provider.germanLevel))
+                Text(
+                  'Exam: ${DateFormat('MMM dd').format(provider.examDates[provider.germanLevel]!)}',
+                  style: GoogleFonts.inter(
+                    color: AppColors.secondary,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeesCard(BuildContext context, StudyProvider provider) {
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withOpacity(0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Icon(
+              Icons.payments_outlined,
+              color: AppColors.success,
+              size: 24.sp,
+            ),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Class Fees',
+                  style: GoogleFonts.inter(
+                    fontSize: 12.sp,
+                    color: AppColors.textSecondaryLight,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  '€${provider.germanClassFees.toStringAsFixed(2)}',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(onPressed: () {}, child: const Text('Update')),
         ],
       ),
     );
@@ -179,6 +248,11 @@ class GermanLearningScreen extends StatelessWidget {
             bgColor = AppColors.primary.withOpacity(0.1);
             textColor = AppColors.primary;
             icon = Icons.check_circle_rounded;
+            break;
+          case 'Running':
+            bgColor = AppColors.accent.withOpacity(0.1);
+            textColor = AppColors.accent;
+            icon = Icons.play_circle_fill_rounded;
             break;
           case 'Completed':
             bgColor = AppColors.secondary.withOpacity(0.1);

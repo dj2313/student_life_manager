@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../providers/study_provider.dart';
+import '../../../data/models/university.dart';
+import 'package:uuid/uuid.dart';
 
 class UniversityManagerScreen extends StatelessWidget {
   final String uniType; // 'Public' or 'Private' or 'Language'
@@ -151,7 +153,7 @@ class UniversityManagerScreen extends StatelessWidget {
 
   Widget _buildUniversityCard(
     BuildContext context,
-    Map<String, dynamic> uni,
+    University uni,
     StudyProvider provider,
   ) {
     return Container(
@@ -185,35 +187,44 @@ class UniversityManagerScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      uni['name'] ?? '',
+                      uni.name,
                       style: GoogleFonts.outfit(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.w700,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
-                    if (uni['location'] != null)
-                      Text(
-                        uni['location'],
-                        style: GoogleFonts.inter(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondaryLight,
-                        ),
+                    if (uni.location.isNotEmpty)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 10.sp,
+                            color: AppColors.textSecondaryLight,
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            uni.location,
+                            style: GoogleFonts.inter(
+                              fontSize: 12.sp,
+                              color: AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
                       ),
                   ],
                 ),
               ),
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.delete_outline_rounded,
                   color: AppColors.error,
                 ),
-                onPressed: () =>
-                    _showDeleteDialog(context, provider, uni['id']),
+                onPressed: () => _showDeleteDialog(context, provider, uni.id),
               ),
             ],
           ),
-          if (uni['program'] != null) ...[
+          if (uni.course.isNotEmpty) ...[
             SizedBox(height: 16.h),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
@@ -222,7 +233,7 @@ class UniversityManagerScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Text(
-                uni['program'],
+                uni.course,
                 style: GoogleFonts.inter(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
@@ -231,10 +242,10 @@ class UniversityManagerScreen extends StatelessWidget {
               ),
             ),
           ],
-          if (uni['notes'] != null && uni['notes'].isNotEmpty) ...[
+          if (uni.notes.isNotEmpty) ...[
             SizedBox(height: 12.h),
             Text(
-              uni['notes'],
+              uni.notes,
               style: GoogleFonts.inter(
                 fontSize: 13.sp,
                 color: AppColors.textSecondaryLight,
@@ -325,13 +336,17 @@ class UniversityManagerScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   if (nameController.text.isNotEmpty) {
-                    provider.addUniversity(
-                      type: uniType,
+                    final uni = University(
+                      id: const Uuid().v4(),
                       name: nameController.text,
+                      type: uniType,
+                      course: programController.text,
                       location: locationController.text,
-                      program: programController.text,
                       notes: notesController.text,
+                      duration: 'N/A',
+                      tuitionFees: 0.0,
                     );
+                    provider.addUniversity(uni);
                     Navigator.pop(context);
                   }
                 },

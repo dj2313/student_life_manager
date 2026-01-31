@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../providers/study_provider.dart';
 import '../../../data/models/lecture.dart';
+import '../../../data/models/university.dart';
+import './add_university_screen.dart';
 
 class UniScheduleScreen extends StatefulWidget {
   final String uniType;
@@ -14,7 +16,22 @@ class UniScheduleScreen extends StatefulWidget {
   State<UniScheduleScreen> createState() => _UniScheduleScreenState();
 }
 
-class _UniScheduleScreenState extends State<UniScheduleScreen> {
+class _UniScheduleScreenState extends State<UniScheduleScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<StudyProvider>(context);
@@ -38,44 +55,278 @@ class _UniScheduleScreenState extends State<UniScheduleScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: widget.uniType == 'Public'
+              ? AppColors.primary
+              : AppColors.accent,
+          labelColor: Theme.of(context).colorScheme.primary,
+          unselectedLabelColor: AppColors.textTertiaryLight,
+          labelStyle: GoogleFonts.inter(
+            fontWeight: FontWeight.bold,
+            fontSize: 13.sp,
+          ),
+          tabs: const [
+            Tab(text: 'SCHEDULE'),
+            Tab(text: 'SAVED UNIVERSITIES'),
+          ],
+        ),
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(24.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildBanner(),
-                  SizedBox(height: 32.h),
-                  Text(
-                    'TODAY\'S SCHEDULE',
-                    style: GoogleFonts.inter(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textTertiaryLight,
-                      letterSpacing: 1.5,
-                    ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildScheduleView(lectures),
+          _buildUniversityHubView(provider),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleView(List<Lecture> lectures) {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildBanner(),
+                SizedBox(height: 32.h),
+                Text(
+                  'TODAY\'S SCHEDULE',
+                  style: GoogleFonts.inter(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textTertiaryLight,
+                    letterSpacing: 1.5,
                   ),
-                  SizedBox(height: 16.h),
-                  if (lectures.isEmpty)
-                    Center(
+                ),
+                SizedBox(height: 16.h),
+                if (lectures.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 40.h),
                       child: Text(
                         'No lectures today',
                         style: GoogleFonts.inter(
                           color: AppColors.textSecondaryLight,
                         ),
                       ),
-                    )
-                  else
-                    ...lectures.map((l) => _buildLectureDetailCard(l)).toList(),
-                ],
-              ),
+                    ),
+                  )
+                else
+                  ...lectures.map((l) => _buildLectureDetailCard(l)).toList(),
+              ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUniversityHubView(StudyProvider provider) {
+    final universities = provider.getUniversitiesByType(widget.uniType);
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'SAVED LIST',
+                      style: GoogleFonts.inter(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textTertiaryLight,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddUniversityScreen(
+                              initialType: widget.uniType,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Add New'),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16.h),
+                if (universities.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 40.h),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.school_outlined,
+                            size: 64.sp,
+                            color: AppColors.textTertiaryLight.withOpacity(0.2),
+                          ),
+                          SizedBox(height: 16.h),
+                          Text(
+                            'No universities saved yet',
+                            style: GoogleFonts.inter(
+                              color: AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ...universities
+                      .map((uni) => _buildUniversityCard(uni))
+                      .toList(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUniversityCard(University uni) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withOpacity(0.1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  uni.name,
+                  style: GoogleFonts.outfit(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color:
+                      (uni.type == 'Public'
+                              ? AppColors.primary
+                              : AppColors.accent)
+                          .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Text(
+                  uni.status,
+                  style: GoogleFonts.inter(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.bold,
+                    color: uni.type == 'Public'
+                        ? AppColors.primary
+                        : AppColors.accent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            uni.course,
+            style: GoogleFonts.inter(
+              fontSize: 14.sp,
+              color: AppColors.textSecondaryLight,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              _buildUniBadge(Icons.timer_outlined, uni.duration),
+              SizedBox(width: 12.w),
+              _buildUniBadge(
+                Icons.euro_symbol_rounded,
+                '€${uni.tuitionFees.toStringAsFixed(0)}',
+              ),
+              SizedBox(width: 12.w),
+              _buildUniBadge(
+                Icons.location_on_outlined,
+                uni.location.split(',').first,
+              ),
+            ],
+          ),
+          SizedBox(height: 20.h),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  child: const Text('Details'),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  child: const Text('Update Status'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUniBadge(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 14.sp, color: AppColors.textTertiaryLight),
+        SizedBox(width: 4.w),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11.sp,
+            color: AppColors.textSecondaryLight,
+          ),
+        ),
+      ],
     );
   }
 
