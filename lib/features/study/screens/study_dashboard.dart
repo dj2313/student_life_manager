@@ -7,6 +7,7 @@ import '../providers/study_provider.dart';
 import '../../../data/models/lecture.dart';
 import 'german_learning_screen.dart';
 import 'uni_schedule_screen.dart';
+import 'add_university_screen.dart';
 
 class StudyDashboard extends StatelessWidget {
   const StudyDashboard({super.key});
@@ -33,7 +34,26 @@ class StudyDashboard extends StatelessWidget {
                       SizedBox(height: 16.h),
                       _buildGermanFocusCard(context),
                       SizedBox(height: 32.h),
-                      _buildSectionTitle(context, 'University Hub'),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildSectionTitle(context, 'University Hub'),
+                          IconButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const AddUniversityScreen(),
+                              ),
+                            ),
+                            icon: Icon(
+                              Icons.add_circle_outline_rounded,
+                              color: AppColors.primary,
+                              size: 24.sp,
+                            ),
+                          ),
+                        ],
+                      ),
                       SizedBox(height: 16.h),
                       Row(
                         children: [

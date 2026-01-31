@@ -121,7 +121,9 @@ class CurrencyService {
     if (_cachedRates.isEmpty) {
       return ['EUR', 'USD', 'GBP', 'INR', 'JPY', 'AUD', 'CAD', 'CHF'];
     }
-    return [_baseCurrency, ..._cachedRates.keys.toList()];
+    final otherCurrencies =
+        _cachedRates.keys.where((c) => c != _baseCurrency).toList()..sort();
+    return [_baseCurrency, ...otherCurrencies];
   }
 
   /// Get currency symbol

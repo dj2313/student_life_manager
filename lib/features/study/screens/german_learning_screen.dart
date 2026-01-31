@@ -37,6 +37,10 @@ class GermanLearningScreen extends StatelessWidget {
               children: [
                 _buildProgressCard(context, provider),
                 SizedBox(height: 32.h),
+                _buildSectionTitle('LEVEL STATUS'),
+                SizedBox(height: 16.h),
+                _buildLevelGrid(context, provider),
+                SizedBox(height: 32.h),
                 _buildSectionTitle('STUDY GOALS'),
                 SizedBox(height: 16.h),
                 ...provider.goals
@@ -150,6 +154,87 @@ class GermanLearningScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLevelGrid(BuildContext context, StudyProvider provider) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      mainAxisSpacing: 12.w,
+      crossAxisSpacing: 12.w,
+      childAspectRatio: 1,
+      children: provider.germanProgress.entries.map((entry) {
+        final level = entry.key;
+        final status = entry.value;
+        final isCurrent = provider.germanLevel == level;
+
+        Color bgColor;
+        Color textColor;
+        IconData? icon;
+
+        switch (status) {
+          case 'Cleared':
+            bgColor = AppColors.primary.withOpacity(0.1);
+            textColor = AppColors.primary;
+            icon = Icons.check_circle_rounded;
+            break;
+          case 'Completed':
+            bgColor = AppColors.secondary.withOpacity(0.1);
+            textColor = AppColors.secondary;
+            icon = Icons.stars_rounded;
+            break;
+          default:
+            bgColor = Theme.of(context).cardTheme.color!;
+            textColor = AppColors.textSecondaryLight;
+            icon = null;
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(20.r),
+            border: isCurrent
+                ? Border.all(color: AppColors.primary, width: 2)
+                : Border.all(color: Theme.of(context).dividerColor),
+            boxShadow: isCurrent
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: textColor, size: 20.sp),
+                SizedBox(height: 4.h),
+              ],
+              Text(
+                level,
+                style: GoogleFonts.outfit(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isCurrent ? AppColors.primary : textColor,
+                ),
+              ),
+              Text(
+                status,
+                style: GoogleFonts.inter(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w500,
+                  color: textColor.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 

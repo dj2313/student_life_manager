@@ -13,12 +13,22 @@ class StudyProvider with ChangeNotifier {
   double _hoursLoggedThisWeek = 8;
   double _weeklyTargetHours = 12;
 
+  Map<String, String> _germanProgress = {
+    'A1': 'Cleared',
+    'A2': 'Completed',
+    'B1': 'Pending',
+    'B2': 'Pending',
+    'C1': 'Pending',
+    'C2': 'Pending',
+  };
+
   List<Lecture> _todayLectures = [];
   List<GermanSession> _sessions = [];
   List<StudyGoal> _goals = [];
   List<Map<String, dynamic>> _universities = [];
 
   String get germanLevel => _germanLevel;
+  Map<String, String> get germanProgress => _germanProgress;
   double get hoursLoggedThisWeek => _hoursLoggedThisWeek;
   double get weeklyTargetHours => _weeklyTargetHours;
   List<Lecture> get todayLectures => _todayLectures;

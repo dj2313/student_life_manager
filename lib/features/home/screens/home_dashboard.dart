@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../providers/home_provider.dart';
 import '../../../data/models/ticket.dart';
@@ -24,6 +25,7 @@ class HomeDashboard extends StatefulWidget {
 
 class _HomeDashboardState extends State<HomeDashboard> {
   bool _isNotificationOn = true;
+  bool _isSummaryExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -190,13 +192,51 @@ class _HomeDashboardState extends State<HomeDashboard> {
         ),
         Padding(
           padding: EdgeInsets.only(right: 16.w),
-          child: CircleAvatar(
-            radius: 20.r,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
-            child: Icon(
-              Icons.person_outline,
-              color: AppColors.primary,
-              size: 20.sp,
+          child: PopupMenuButton<String>(
+            offset: const Offset(0, 50),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            onSelected: (value) {
+              if (value == 'edit_profile') {
+                _showEditProfileDialog(context, provider);
+              } else if (value == 'edit_location') {
+                _showEditLocationDialog(context, provider);
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'edit_profile',
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.person_outline_rounded,
+                      color: AppColors.primary,
+                    ),
+                    SizedBox(width: 12.w),
+                    const Text('Edit Profile'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'edit_location',
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.secondary,
+                    ),
+                    SizedBox(width: 12.w),
+                    const Text('Update Location'),
+                  ],
+                ),
+              ),
+            ],
+            child: CircleAvatar(
+              radius: 20.r,
+              backgroundImage: const NetworkImage(
+                'https://ui-avatars.com/api/?name=Dhruv+P&background=6366f1&color=fff',
+              ),
             ),
           ),
         ),
@@ -249,173 +289,177 @@ class _HomeDashboardState extends State<HomeDashboard> {
     IconData greetingIcon;
 
     if (hour < 12) {
-      greeting = '☀️ Good Morning';
+      greeting = 'Good Morning';
       greetingIcon = Icons.wb_sunny_rounded;
     } else if (hour < 17) {
-      greeting = '🌤️ Good Afternoon';
+      greeting = 'Good Afternoon';
       greetingIcon = Icons.wb_twilight_rounded;
     } else {
-      greeting = '🌙 Good Evening';
+      greeting = 'Good Evening';
       greetingIcon = Icons.nightlight_round;
     }
 
     final formattedDate =
         '${_getDayName(now.weekday)}, ${_getMonthName(now.month)} ${now.day}';
-    final formattedTime =
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
-    return Container(
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.accent.withOpacity(0.08),
-            AppColors.secondary.withOpacity(0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28.r),
-        border: Border.all(
-          color: AppColors.accent.withOpacity(0.15),
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    greeting,
-                    style: GoogleFonts.outfit(
-                      fontSize: 24.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    '$formattedDate • $formattedTime',
-                    style: GoogleFonts.inter(
-                      fontSize: 13.sp,
-                      color: AppColors.textSecondaryLight,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(greetingIcon, color: AppColors.accent, size: 28.sp),
-              ),
-            ],
+    return InkWell(
+      onTap: () => setState(() => _isSummaryExpanded = !_isSummaryExpanded),
+      borderRadius: BorderRadius.circular(24.r),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(24.r),
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.05),
+            width: 1,
           ),
-          SizedBox(height: 20.h),
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Today's Overview",
-                  style: GoogleFonts.inter(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondaryLight,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                _buildOverviewItem(
-                  context,
-                  '💰',
-                  'Total Liquidity: €${moneyProvider.totalBalance.toStringAsFixed(0)}',
-                ),
-                _buildOverviewItem(
-                  context,
-                  '📚',
-                  'Study Target: ${studyProvider.hoursLoggedThisWeek.toStringAsFixed(1)}/${studyProvider.weeklyTargetHours}hr',
-                ),
-                _buildOverviewItem(
-                  context,
-                  '✅',
-                  '${provider.bureaucracyTasks.where((t) => t.isCompleted).length}/${provider.bureaucracyTasks.length} tasks completed',
-                ),
-                SizedBox(height: 8.h),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 8.h,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.success.withOpacity(0.15),
-                        AppColors.success.withOpacity(0.05),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.all(_isSummaryExpanded ? 20.w : 16.w),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
                     children: [
                       Icon(
-                        Icons.trending_up_rounded,
-                        color: AppColors.success,
-                        size: 16.sp,
+                        greetingIcon,
+                        color: AppColors.secondary.withOpacity(0.8),
+                        size: _isSummaryExpanded ? 22.sp : 18.sp,
                       ),
-                      SizedBox(width: 8.w),
-                      Text(
-                        'You\'re on track! 🎯',
-                        style: GoogleFonts.inter(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.success,
-                        ),
+                      SizedBox(width: 12.w),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            greeting,
+                            style: GoogleFonts.outfit(
+                              fontSize: _isSummaryExpanded ? 20.sp : 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          if (!_isSummaryExpanded)
+                            Text(
+                              DateFormat('HH:mm').format(now),
+                              style: GoogleFonts.inter(
+                                fontSize: 11.sp,
+                                color: AppColors.secondary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          if (_isSummaryExpanded)
+                            Text(
+                              formattedDate,
+                              style: GoogleFonts.inter(
+                                fontSize: 12.sp,
+                                color: AppColors.textSecondaryLight,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-              ],
+                  Icon(
+                    _isSummaryExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.textTertiaryLight,
+                    size: 20.sp,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            if (_isSummaryExpanded) ...[
+              Divider(
+                height: 1,
+                color: Theme.of(context).dividerColor.withOpacity(0.05),
+              ),
+              Padding(
+                padding: EdgeInsets.all(20.w),
+                child: Column(
+                  children: [
+                    _buildMinimalOverviewItem(
+                      context,
+                      Icons.account_balance_wallet_outlined,
+                      'Liquidity',
+                      '€${moneyProvider.totalBalance.toStringAsFixed(0)}',
+                      AppColors.primary,
+                    ),
+                    SizedBox(height: 12.h),
+                    _buildMinimalOverviewItem(
+                      context,
+                      Icons.menu_book_outlined,
+                      'Study Target',
+                      '${studyProvider.hoursLoggedThisWeek.toStringAsFixed(1)}h / ${studyProvider.weeklyTargetHours}h',
+                      AppColors.secondary,
+                    ),
+                    SizedBox(height: 12.h),
+                    _buildMinimalOverviewItem(
+                      context,
+                      Icons.check_circle_outline_rounded,
+                      'Tasks',
+                      '${provider.bureaucracyTasks.where((t) => t.isCompleted).length} of ${provider.bureaucracyTasks.length}',
+                      AppColors.success,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildOverviewItem(BuildContext context, String emoji, String text) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 6.h),
-      child: Row(
-        children: [
-          Text(emoji, style: TextStyle(fontSize: 14.sp)),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.inter(
-                fontSize: 13.sp,
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+  Widget _buildMinimalOverviewItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10.r),
           ),
-        ],
-      ),
+          child: Icon(icon, color: color, size: 16.sp),
+        ),
+        SizedBox(width: 12.w),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 13.sp,
+            color: AppColors.textSecondaryLight,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      ],
     );
   }
 
