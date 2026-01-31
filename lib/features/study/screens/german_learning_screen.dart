@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../widgets/german_timer.dart';
-import '../widgets/study_progress.dart';
+import '../providers/study_provider.dart';
+import 'package:intl/intl.dart';
 
 class GermanLearningScreen extends StatelessWidget {
   const GermanLearningScreen({super.key});
@@ -12,90 +12,59 @@ class GermanLearningScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          _buildSliverAppBar(context),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeaderDescription(),
-                  SizedBox(height: 32.h),
-                  _buildSectionTitle('Academic Road'),
-                  SizedBox(height: 16.h),
-                  _buildGoalCard(context),
-                  SizedBox(height: 32.h),
-                  _buildSectionTitle('Active Mentorship'),
-                  SizedBox(height: 16.h),
-                  _buildTutorCard(context),
-                  SizedBox(height: 32.h),
-                  _buildActionRow(context),
-                  SizedBox(height: 100.h),
-                ],
-              ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'German Learning',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Consumer<StudyProvider>(
+        builder: (context, provider, child) {
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildProgressCard(context, provider),
+                SizedBox(height: 32.h),
+                _buildSectionTitle('STUDY GOALS'),
+                SizedBox(height: 16.h),
+                ...provider.goals
+                    .map((goal) => _buildGoalCard(context, goal))
+                    .toList(),
+                SizedBox(height: 32.h),
+                _buildSectionTitle('RECENT SESSIONS'),
+                SizedBox(height: 16.h),
+                ...provider.sessions
+                    .map((session) => _buildSessionTile(context, session))
+                    .toList(),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
-    );
-  }
-
-  Widget _buildSliverAppBar(BuildContext context) {
-    return SliverAppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(
-          Icons.arrow_back_ios_rounded,
-          color: AppColors.primary,
-          size: 20,
-        ),
-        onPressed: () => Navigator.pop(context),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {}, // Add session dialog
+        label: const Text('New Session'),
+        icon: const Icon(Icons.add),
+        backgroundColor: AppColors.primary,
       ),
-      centerTitle: true,
-      title: Text(
-        'Language Proficiency',
-        style: GoogleFonts.outfit(
-          fontSize: 16.sp,
-          fontWeight: FontWeight.w600,
-          color: AppColors.primary,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderDescription() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '🇩🇪 German A2',
-          style: GoogleFonts.outfit(
-            fontSize: 32.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          'Targeting Professional Working Proficiency by 2026',
-          style: GoogleFonts.inter(
-            fontSize: 14.sp,
-            color: AppColors.textSecondaryLight,
-          ),
-        ),
-      ],
     );
   }
 
   Widget _buildSectionTitle(String title) {
     return Text(
-      title.toUpperCase(),
+      title,
       style: GoogleFonts.inter(
         fontSize: 11.sp,
         fontWeight: FontWeight.w800,
@@ -105,133 +74,172 @@ class GermanLearningScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGoalCard(BuildContext context) {
+  Widget _buildProgressCard(BuildContext context, StudyProvider provider) {
+    final progress = provider.hoursLoggedThisWeek / provider.weeklyTargetHours;
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: AppColors.borderLight),
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, Color(0xFF4F46E5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(30.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.flag_rounded, color: AppColors.secondary, size: 24.sp),
-              SizedBox(width: 12.w),
-              Text(
-                'Milestone: B1 Exam',
-                style: GoogleFonts.inter(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Level ${provider.germanLevel}',
+                    style: GoogleFonts.inter(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '${provider.hoursLoggedThisWeek}h / ${provider.weeklyTargetHours}h',
+                    style: GoogleFonts.outfit(
+                      fontSize: 32.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.auto_graph_rounded,
+                  color: Colors.white,
                 ),
               ),
             ],
           ),
           SizedBox(height: 20.h),
-          const StudyProgress(progress: 0.8, label: 'Completion Velocity'),
-          SizedBox(height: 20.h),
-          Text(
-            'Schedule Intensity: 18h / week',
-            style: GoogleFonts.inter(
-              fontSize: 12.sp,
-              color: AppColors.textSecondaryLight,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10.r),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0, 1),
+              minHeight: 12.h,
+              backgroundColor: Colors.white.withOpacity(0.1),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.secondary,
+              ),
             ),
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            'Keep going! ${(progress * 100).toInt()}% of weekly goal achieved.',
+            style: GoogleFonts.inter(color: Colors.white, fontSize: 12.sp),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTutorCard(BuildContext context) {
+  Widget _buildGoalCard(BuildContext context, dynamic goal) {
     return Container(
-      padding: EdgeInsets.all(24.w),
+      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(24.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.2),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              CircleAvatar(
-                backgroundColor: Colors.white12,
-                child: Icon(Icons.person_outline_rounded, color: Colors.white),
+              Text(
+                goal.title,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16.sp,
+                ),
               ),
-              SizedBox(width: 16.w),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Kalpesh Sir',
-                    style: GoogleFonts.inter(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    'Lead Language Coach',
-                    style: GoogleFonts.inter(
-                      fontSize: 12.sp,
-                      color: Colors.white60,
-                    ),
-                  ),
-                ],
-              ),
+              const Icon(Icons.flag_rounded, color: AppColors.secondary),
             ],
           ),
-          SizedBox(height: 24.h),
-          const GermanTimer(),
+          SizedBox(height: 8.h),
+          Text(
+            'Deadline: ${DateFormat('MMM dd').format(goal.deadline)}',
+            style: GoogleFonts.inter(
+              color: AppColors.textSecondaryLight,
+              fontSize: 12.sp,
+            ),
+          ),
+          SizedBox(height: 16.h),
+          LinearProgressIndicator(
+            value: goal.currentProgress / goal.targetProgress,
+            backgroundColor: Theme.of(context).dividerColor,
+            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+            borderRadius: BorderRadius.circular(4.r),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildActionRow(BuildContext context) {
-    return Row(
-      children: [
-        _buildActionBtn('Archives', Icons.folder_open_rounded),
-        SizedBox(width: 16.w),
-        _buildActionBtn('Vocab', Icons.abc_rounded),
-      ],
-    );
-  }
-
-  Widget _buildActionBtn(String label, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16.h),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.borderLight),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 18.sp, color: AppColors.primary),
-            SizedBox(width: 8.w),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
-              ),
+  Widget _buildSessionTile(BuildContext context, dynamic session) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12.r),
             ),
-          ],
-        ),
+            child: const Icon(Icons.history_rounded, color: AppColors.primary),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  session.topicsCovered,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14.sp,
+                  ),
+                ),
+                Text(
+                  '${DateFormat('MMM dd').format(session.date)} • ${session.durationHours} hours',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textSecondaryLight,
+                    fontSize: 12.sp,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

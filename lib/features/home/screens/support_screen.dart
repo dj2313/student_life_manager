@@ -9,7 +9,7 @@ class SupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -20,7 +20,7 @@ class SupportScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
+                  _buildHeader(context),
                   SizedBox(height: 32.h),
                   _buildContactOption(
                     context,
@@ -46,9 +46,9 @@ class SupportScreen extends StatelessWidget {
                   SizedBox(height: 40.h),
                   _buildSectionTitle('Frequently Asked Questions'),
                   SizedBox(height: 16.h),
-                  _buildFAQItem('How to track expenses?'),
-                  _buildFAQItem('How to change currency?'),
-                  _buildFAQItem('How to backup my notes?'),
+                  _buildFAQItem(context, 'How to track expenses?'),
+                  _buildFAQItem(context, 'How to change currency?'),
+                  _buildFAQItem(context, 'How to backup my notes?'),
                   SizedBox(height: 120.h),
                 ],
               ),
@@ -67,7 +67,7 @@ class SupportScreen extends StatelessWidget {
       leading: IconButton(
         icon: Icon(
           Icons.arrow_back_ios_new_rounded,
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           size: 20.sp,
         ),
         onPressed: () => Navigator.pop(context),
@@ -77,14 +77,15 @@ class SupportScreen extends StatelessWidget {
         style: GoogleFonts.outfit(
           fontSize: 16.sp,
           fontWeight: FontWeight.w600,
-          color: AppColors.primary,
+          color: Theme.of(context).colorScheme.primary,
           letterSpacing: 1.2,
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.primary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -93,7 +94,7 @@ class SupportScreen extends StatelessWidget {
           style: GoogleFonts.outfit(
             fontSize: 32.sp,
             fontWeight: FontWeight.w600,
-            color: AppColors.primary,
+            color: textColor,
           ),
         ),
         SizedBox(height: 8.h),
@@ -119,9 +120,9 @@ class SupportScreen extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
@@ -177,14 +178,14 @@ class SupportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFAQItem(String question) {
+  Widget _buildFAQItem(BuildContext context, String question) {
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.borderLight),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

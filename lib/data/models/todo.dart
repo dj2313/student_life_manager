@@ -4,9 +4,18 @@ class Todo {
   late String priority; // 'high', 'medium', 'low'
   late DateTime dueDate;
   late bool completed;
-  late String category; // 'Study', 'Finance', 'Personal', 'Shopping'
+  late String category; // 'Study', 'Money', 'Personal', 'Govt'
   String? description;
   late DateTime createdAt;
+
+  // New fields for recurring habits
+  late bool isRecurring;
+  String? recurrenceInterval; // 'Daily', 'Weekly'
+
+  // Pomodoro progress
+  int pomodoroSessions;
+
+  late bool shouldNotify;
 
   Todo({
     required this.id,
@@ -17,6 +26,10 @@ class Todo {
     required this.category,
     this.description,
     required this.createdAt,
+    this.isRecurring = false,
+    this.recurrenceInterval,
+    this.pomodoroSessions = 0,
+    this.shouldNotify = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -29,6 +42,10 @@ class Todo {
       'category': category,
       'description': description,
       'createdAt': createdAt.toIso8601String(),
+      'isRecurring': isRecurring,
+      'recurrenceInterval': recurrenceInterval,
+      'pomodoroSessions': pomodoroSessions,
+      'shouldNotify': shouldNotify,
     };
   }
 
@@ -42,6 +59,10 @@ class Todo {
       category: json['category'],
       description: json['description'],
       createdAt: DateTime.parse(json['createdAt']),
+      isRecurring: json['isRecurring'] ?? false,
+      recurrenceInterval: json['recurrenceInterval'],
+      pomodoroSessions: json['pomodoroSessions'] ?? 0,
+      shouldNotify: json['shouldNotify'] ?? false,
     );
   }
 }

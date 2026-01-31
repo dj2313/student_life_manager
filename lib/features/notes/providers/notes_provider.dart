@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../data/models/note.dart';
+import '../../../core/services/notification_service.dart';
 
 class NotesProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final NotificationService _notificationService = NotificationService();
   List<Note> _notes = [];
   bool _isLoading = false;
 
@@ -91,6 +93,15 @@ class NotesProvider with ChangeNotifier {
           .collection('notes')
           .doc(note.id)
           .set(note.toJson());
+
+      if (note.shouldNotify) {
+        await _notificationService.scheduleNotification(
+          id: note.id.hashCode,
+          title: "Note Reminder: ${note.title}",
+          body: "Click to check your note!",
+          scheduledDate: DateTime.now().add(const Duration(hours: 1)),
+        );
+      }
 
       // Update local list
       final index = _notes.indexWhere((n) => n.id == note.id);

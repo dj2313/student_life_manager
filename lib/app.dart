@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/premium_theme.dart';
 import 'package:provider/provider.dart';
-import 'features/onboarding/screens/landing_screen.dart';
+import 'features/auth/providers/auth_provider.dart';
+import 'features/auth/widgets/auth_wrapper.dart';
 import 'features/home/providers/home_provider.dart';
 import 'core/providers/system_status_provider.dart';
 import 'features/tasks/providers/tasks_provider.dart';
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => SystemStatusProvider()),
         ChangeNotifierProvider(create: (_) => TasksProvider()),
@@ -43,7 +45,7 @@ class MyApp extends StatelessWidget {
                 theme: PremiumTheme.light,
                 darkTheme: PremiumTheme.dark,
                 themeMode: themeProvider.themeMode,
-                home: const LandingScreen(),
+                home: const AuthWrapper(),
               );
             },
           );

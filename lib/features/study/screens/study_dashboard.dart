@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../providers/study_provider.dart';
 import '../../../data/models/lecture.dart';
 import 'german_learning_screen.dart';
+import 'uni_schedule_screen.dart';
 
 class StudyDashboard extends StatelessWidget {
   const StudyDashboard({super.key});
@@ -39,16 +40,50 @@ class StudyDashboard extends StatelessWidget {
                           Expanded(
                             child: _buildUniSelectionCard(
                               context,
-                              'Public Uni',
-                              Icons.account_balance_rounded,
+                              'Language',
+                              Icons.translate_rounded,
+                              AppColors.secondary,
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const GermanLearningScreen(),
+                                ),
+                              ),
                             ),
                           ),
-                          SizedBox(width: 16.w),
+                          SizedBox(width: 12.w),
                           Expanded(
                             child: _buildUniSelectionCard(
                               context,
-                              'Private Uni',
+                              'Public',
+                              Icons.account_balance_rounded,
+                              AppColors.primary,
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const UniScheduleScreen(
+                                    uniType: 'Public',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: _buildUniSelectionCard(
+                              context,
+                              'Private',
                               Icons.business_rounded,
+                              AppColors.accent,
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const UniScheduleScreen(
+                                    uniType: 'Private',
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -110,7 +145,7 @@ class StudyDashboard extends StatelessWidget {
         Row(
           children: [
             Text(
-              provider.hoursLogged.toString(),
+              provider.hoursLoggedThisWeek.toString(),
               style: GoogleFonts.outfit(
                 fontSize: 48.sp,
                 fontWeight: FontWeight.w600,
@@ -258,30 +293,43 @@ class StudyDashboard extends StatelessWidget {
     BuildContext context,
     String title,
     IconData icon,
+    Color color,
+    VoidCallback onTap,
   ) {
     final cardColor = Theme.of(context).cardTheme.color;
     final textColor = Theme.of(context).colorScheme.primary;
 
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 20.h),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: textColor, size: 28.sp),
-          SizedBox(height: 12.h),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
-              color: textColor,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 12.w),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24.sp),
             ),
-          ),
-        ],
+            SizedBox(height: 12.h),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

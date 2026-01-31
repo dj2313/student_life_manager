@@ -6,6 +6,7 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../auth/providers/auth_provider.dart';
 import 'calculator_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -14,6 +15,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
     final textColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
@@ -34,7 +36,16 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         physics: const BouncingScrollPhysics(),
         children: [
-          _buildHeader(context),
+          _buildHeader(context, authProvider),
+          _buildSection(context, 'Account Settings', [
+            _buildSettingsTile(
+              context,
+              Icons.logout_rounded,
+              'Sign Out',
+              AppColors.error,
+              onTap: () => _showLogoutDialog(context, authProvider),
+            ),
+          ]),
           _buildSection(context, 'Finance & Tools', [
             _buildSettingsTile(
               context,
@@ -122,8 +133,36 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              authProvider.signOut();
+              Navigator.pop(context);
+            },
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, AuthProvider authProvider) {
     final textColor = Theme.of(context).colorScheme.primary;
+    final user = authProvider.user;
+
     return Container(
       padding: EdgeInsets.all(AppSizes.paddingLG.w),
       margin: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
@@ -137,28 +176,37 @@ class SettingsScreen extends StatelessWidget {
           CircleAvatar(
             radius: 30.r,
             backgroundColor: AppColors.primary,
-            child: Icon(Icons.person, size: 35.sp, color: Colors.white),
+            child: Text(
+              (user?.email?.substring(0, 1) ?? 'U').toUpperCase(),
+              style: GoogleFonts.outfit(
+                fontSize: 24.sp,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
           ),
           SizedBox(width: AppSizes.spacingMD.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Student User',
-                style: GoogleFonts.outfit(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user?.displayName ?? 'Student User',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
                 ),
-              ),
-              Text(
-                'student@example.com',
-                style: GoogleFonts.inter(
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondaryLight,
+                Text(
+                  user?.email ?? 'Not Logged In',
+                  style: GoogleFonts.inter(
+                    fontSize: 14.sp,
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

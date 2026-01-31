@@ -162,6 +162,12 @@ class NotesScreen extends StatelessWidget {
                     color: AppColors.textTertiaryLight,
                   ),
                 ),
+                if (note.shouldNotify)
+                  Icon(
+                    Icons.notifications_on_outlined,
+                    size: 14.sp,
+                    color: AppColors.secondary,
+                  ),
                 if (note.tags != null && note.tags!.isNotEmpty)
                   Container(
                     padding: EdgeInsets.symmetric(
@@ -196,95 +202,173 @@ class NotesScreen extends StatelessWidget {
   }) {
     final titleController = TextEditingController(text: note?.title);
     final contentController = TextEditingController(text: note?.content);
+    DateTime selectedDate = note?.updatedAt ?? DateTime.now();
+    bool shouldNotify = note?.shouldNotify ?? false;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.75,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
-        ),
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  note == null ? 'New Note' : 'Edit Note',
-                  style: GoogleFonts.outfit(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w600,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          ),
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    note == null ? 'New Note' : 'Edit Note',
+                    style: GoogleFonts.outfit(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: titleController,
-                      style: GoogleFonts.outfit(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      decoration: const InputDecoration(
-                        hintText: 'Title',
-                        border: InputBorder.none,
-                      ),
-                    ),
-                    TextField(
-                      controller: contentController,
-                      maxLines: null,
-                      style: GoogleFonts.inter(fontSize: 16.sp),
-                      decoration: const InputDecoration(
-                        hintText: 'Start typing...',
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ],
-                ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
               ),
-            ),
-            SizedBox(height: 20.h),
-            SizedBox(
-              width: double.infinity,
-              height: 56.h,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (titleController.text.isNotEmpty ||
-                      contentController.text.isNotEmpty) {
-                    final newNote = Note(
-                      id: note?.id ?? Uuid().v4(),
-                      title: titleController.text.isEmpty
-                          ? 'Untitled'
-                          : titleController.text,
-                      content: contentController.text,
-                      createdAt: note?.createdAt ?? DateTime.now(),
-                      updatedAt: DateTime.now(),
-                      tags: note?.tags ?? ['Work'],
+              InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (date != null) {
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(selectedDate),
                     );
-                    if (note == null) {
-                      provider.addNote(newNote);
-                    } else {
-                      provider.updateNote(newNote);
+                    if (time != null) {
+                      setModalState(() {
+                        selectedDate = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          time.hour,
+                          time.minute,
+                        );
+                      });
                     }
                   }
-                  Navigator.pop(context);
                 },
-                child: const Text('Save Note'),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 16.sp,
+                        color: AppColors.secondary,
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        DateFormat('MMM dd, yyyy - HH:mm').format(selectedDate),
+                        style: GoogleFonts.inter(
+                          fontSize: 14.sp,
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-          ],
+              Row(
+                children: [
+                  Icon(
+                    Icons.notifications_active_outlined,
+                    size: 16.sp,
+                    color: AppColors.secondary,
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    'Notify after 1 hr',
+                    style: GoogleFonts.inter(
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondaryLight,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  Switch(
+                    value: shouldNotify,
+                    onChanged: (v) => setModalState(() => shouldNotify = v),
+                    activeColor: AppColors.secondary,
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: titleController,
+                        style: GoogleFonts.outfit(
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: 'Title',
+                          border: InputBorder.none,
+                        ),
+                      ),
+                      TextField(
+                        controller: contentController,
+                        maxLines: null,
+                        style: GoogleFonts.inter(fontSize: 16.sp),
+                        decoration: const InputDecoration(
+                          hintText: 'Start typing...',
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              SizedBox(
+                width: double.infinity,
+                height: 56.h,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (titleController.text.isNotEmpty ||
+                        contentController.text.isNotEmpty) {
+                      final newNote = Note(
+                        id: note?.id ?? const Uuid().v4(),
+                        title: titleController.text.isEmpty
+                            ? 'Untitled'
+                            : titleController.text,
+                        content: contentController.text,
+                        createdAt: note?.createdAt ?? selectedDate,
+                        updatedAt: selectedDate,
+                        tags: note?.tags ?? ['Work'],
+                        shouldNotify: shouldNotify,
+                      );
+                      if (note == null) {
+                        provider.addNote(newNote);
+                      } else {
+                        provider.updateNote(newNote);
+                      }
+                    }
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Save Note'),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 16.h),
+            ],
+          ),
         ),
       ),
     );

@@ -7,6 +7,7 @@ class Note {
   late DateTime createdAt;
   late DateTime updatedAt;
   List<String>? tags;
+  late bool shouldNotify;
 
   Note({
     required this.id,
@@ -15,6 +16,7 @@ class Note {
     required this.createdAt,
     required this.updatedAt,
     this.tags,
+    this.shouldNotify = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -25,6 +27,7 @@ class Note {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'tags': tags,
+      'shouldNotify': shouldNotify,
     };
   }
 
@@ -46,6 +49,7 @@ class Note {
       createdAt: parseDate(json['createdAt']),
       updatedAt: parseDate(json['updatedAt']),
       tags: (json['tags'] as List?)?.cast<String>(),
+      shouldNotify: json['shouldNotify'] ?? false,
     );
   }
 }
