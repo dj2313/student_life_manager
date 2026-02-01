@@ -20,14 +20,14 @@ class HomeProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String _userName = 'Student User';
-  String _visaStatus = 'Active';
-  int _visaDaysRemaining = 5;
+  final String _visaStatus = 'Active';
+  final int _visaDaysRemaining = 5;
 
   // Weather & Residency Info
   String _locationName = 'Berlin';
-  String _temperature = '8°C';
-  String _weatherCondition = 'Partly Cloudy';
-  IconData _weatherIcon = Icons.cloud_queue_rounded;
+  final String _temperature = '8°C';
+  final String _weatherCondition = 'Partly Cloudy';
+  final IconData _weatherIcon = Icons.cloud_queue_rounded;
 
   List<Ticket> _activeTickets = [];
   List<BureaucracyTask> _bureaucracyTasks = [];

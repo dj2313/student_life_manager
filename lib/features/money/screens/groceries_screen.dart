@@ -101,7 +101,7 @@ class GroceriesScreen extends StatelessWidget {
 
   Widget _buildWeeklySummary(BuildContext context, MoneyProvider provider) {
     final spent = provider.groceries.fold(0.0, (sum, g) => sum + g.total);
-    final budget = 60.0;
+    const budget = 60.0;
     final ratio = spent / budget;
 
     return Container(

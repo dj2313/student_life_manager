@@ -303,7 +303,7 @@ class NotesScreen extends StatelessWidget {
                   Switch(
                     value: shouldNotify,
                     onChanged: (v) => setModalState(() => shouldNotify = v),
-                    activeColor: AppColors.secondary,
+                    activeThumbColor: AppColors.secondary,
                   ),
                 ],
               ),

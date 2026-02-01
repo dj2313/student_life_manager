@@ -21,7 +21,7 @@ class MoneyProvider with ChangeNotifier {
   double _totalBalance = 2450.00;
   double _blockedAccountBalance = 11208.00;
   double _eurToInrRate = 89.50;
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _isRefreshingRates = false;
 
   // Multi-currency support

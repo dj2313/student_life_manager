@@ -157,7 +157,7 @@ class LocationScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.home_work_outlined,
                 color: AppColors.textTertiaryLight,
               ),
@@ -245,7 +245,10 @@ class LocationScreen extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded, color: AppColors.textTertiaryLight),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.textTertiaryLight,
+          ),
         ],
       ),
     );

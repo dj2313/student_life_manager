@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -13,9 +14,14 @@ import 'loan_screen.dart';
 import 'groceries_screen.dart';
 import '../widgets/live_currency_converter.dart';
 
-class MoneyDashboard extends StatelessWidget {
+class MoneyDashboard extends StatefulWidget {
   const MoneyDashboard({super.key});
 
+  @override
+  State<MoneyDashboard> createState() => _MoneyDashboardState();
+}
+
+class _MoneyDashboardState extends State<MoneyDashboard> {
   @override
   Widget build(BuildContext context) {
     return Consumer<MoneyProvider>(
@@ -35,19 +41,15 @@ class MoneyDashboard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 12.h),
-                        _buildBalanceSection(context, moneyProvider),
-                        SizedBox(height: 32.h),
+                        _buildMinimalBalanceSection(context, moneyProvider),
+                        SizedBox(height: 24.h),
                         _buildQuickActionChips(context, moneyProvider),
+                        SizedBox(height: 32.h),
+                        _buildIndiaTrackerCard(context),
+                        SizedBox(height: 40.h),
+                        _buildSpendingAnalytics(context, moneyProvider),
                         SizedBox(height: 40.h),
                         _buildAccountsSection(context, moneyProvider),
-                        SizedBox(height: 40.h),
-                        _buildMonthlyChart(context, moneyProvider),
-                        SizedBox(height: 40.h),
-                        const LiveCurrencyConverter(),
-                        SizedBox(height: 40.h),
-                        _buildBudgetPreview(context, moneyProvider),
-                        SizedBox(height: 40.h),
-                        _buildIndiaTrackerCard(context),
                         SizedBox(height: 40.h),
                         _buildTransactionsSection(context, moneyProvider),
                         SizedBox(height: 120.h),
@@ -93,10 +95,16 @@ class MoneyDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildBalanceSection(BuildContext context, MoneyProvider provider) {
+  Widget _buildMinimalBalanceSection(
+    BuildContext context,
+    MoneyProvider provider,
+  ) {
+    final spending = provider.getMonthlySpending();
+    const budget = 600.0;
+    final ratio = spending / budget;
+
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(28.w),
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(32.r),
@@ -104,133 +112,136 @@ class MoneyDashboard extends StatelessWidget {
           color: Theme.of(context).dividerColor.withOpacity(0.08),
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'TOTAL LIQUIDITY',
-                style: GoogleFonts.inter(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textTertiaryLight,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Row(
+          Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.trending_up_rounded,
-                      color: AppColors.success,
-                      size: 14.sp,
-                    ),
-                    SizedBox(width: 4.w),
                     Text(
-                      '+2.4%',
+                      'TOTAL LIQUIDITY',
                       style: GoogleFonts.inter(
                         fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.success,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textTertiaryLight,
+                        letterSpacing: 1.2,
                       ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          '€',
+                          style: GoogleFonts.outfit(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.secondary,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          provider.totalBalance.toStringAsFixed(2),
+                          style: GoogleFonts.outfit(
+                            fontSize: 32.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-            ],
+                _buildBudgetMiniCircle(ratio),
+              ],
+            ),
           ),
-          SizedBox(height: 16.h),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '€',
-                style: GoogleFonts.outfit(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.secondary,
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.03),
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(32.r),
+              ),
+            ),
+            child: Row(
+              children: [
+                _buildCompactStat(
+                  'Personal',
+                  '€${provider.totalBalance.toStringAsFixed(0)}',
+                  AppColors.primary,
                 ),
-              ),
-              SizedBox(width: 6.w),
-              Text(
-                provider.totalBalance.toStringAsFixed(2),
-                style: GoogleFonts.outfit(
-                  fontSize: 44.sp,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.primary,
-                  letterSpacing: -1,
+                SizedBox(width: 24.w),
+                _buildCompactStat(
+                  'Blocked',
+                  '€${provider.blockedAccountBalance.toStringAsFixed(0)}',
+                  AppColors.secondary,
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 24.h),
-          Row(
-            children: [
-              _buildBalanceSummaryItem(
-                context,
-                'Personal',
-                '€${provider.totalBalance.toStringAsFixed(0)}',
-                AppColors.primary,
-              ),
-              Container(
-                height: 30.h,
-                width: 1,
-                color: Theme.of(context).dividerColor.withOpacity(0.05),
-                margin: EdgeInsets.symmetric(horizontal: 20.w),
-              ),
-              _buildBalanceSummaryItem(
-                context,
-                'Blocked',
-                '€${provider.blockedAccountBalance.toStringAsFixed(0)}',
-                AppColors.secondary,
-              ),
-            ],
+                const Spacer(),
+                Text(
+                  'Budget: €${spending.toInt()}/$budget',
+                  style: GoogleFonts.inter(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBalanceSummaryItem(
-    BuildContext context,
-    String label,
-    String value,
-    Color color,
-  ) {
+  Widget _buildBudgetMiniCircle(double ratio) {
+    return SizedBox(
+      width: 48.w,
+      height: 48.w,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircularProgressIndicator(
+            value: ratio.clamp(0, 1),
+            strokeWidth: 4,
+            backgroundColor: AppColors.primary.withOpacity(0.1),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              ratio > 0.9 ? AppColors.error : AppColors.success,
+            ),
+          ),
+          Icon(
+            ratio > 0.9 ? Icons.warning_rounded : Icons.bolt_rounded,
+            size: 16.sp,
+            color: ratio > 0.9 ? AppColors.error : AppColors.success,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactStat(String label, String value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: GoogleFonts.inter(
-            fontSize: 10.sp,
+            fontSize: 9.sp,
             color: AppColors.textSecondaryLight,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        SizedBox(height: 4.h),
         Text(
           value,
           style: GoogleFonts.outfit(
-            fontSize: 16.sp,
+            fontSize: 14.sp,
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
           ),
         ),
       ],
@@ -250,23 +261,31 @@ class MoneyDashboard extends StatelessWidget {
         SizedBox(width: 12.w),
         _buildActionChip(
           context,
-          Icons.handshake_outlined,
-          'Loans',
+          Icons.currency_exchange_rounded,
+          'Rates',
           AppColors.secondary,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const LoanScreen()),
-          ),
+          () => _showCurrencyRatesSheet(context),
         ),
         SizedBox(width: 12.w),
         _buildActionChip(
           context,
           Icons.shopping_cart_outlined,
-          'Groceries',
+          'Grocery',
           AppColors.success,
           () => Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const GroceriesScreen()),
+          ),
+        ),
+        SizedBox(width: 12.w),
+        _buildActionChip(
+          context,
+          Icons.handshake_outlined,
+          'Loans',
+          AppColors.accent,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoanScreen()),
           ),
         ),
       ],
@@ -278,32 +297,68 @@ class MoneyDashboard extends StatelessWidget {
     IconData icon,
     String label,
     Color color,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    bool isActive = false,
+  }) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.symmetric(vertical: 12.h),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.05),
+            color: isActive ? color : color.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: color.withOpacity(0.1), width: 1.5),
+            border: Border.all(
+              color: isActive ? color : color.withOpacity(0.1),
+              width: 1.5,
+            ),
           ),
           child: Column(
             children: [
-              Icon(icon, color: color, size: 24.sp),
+              Icon(icon, color: isActive ? Colors.white : color, size: 22.sp),
               SizedBox(height: 6.h),
               Text(
                 label,
                 style: GoogleFonts.inter(
-                  fontSize: 12.sp,
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.w600,
-                  color: color,
+                  color: isActive ? Colors.white : color,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showCurrencyRatesSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 24.h),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              margin: EdgeInsets.only(bottom: 24.h),
+              decoration: BoxDecoration(
+                color: Theme.of(context).dividerColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            const LiveCurrencyConverter(),
+            SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 16.h),
+          ],
         ),
       ),
     );
@@ -657,7 +712,7 @@ class MoneyDashboard extends StatelessWidget {
               ),
               SizedBox(height: 16.h),
               DropdownButtonFormField<String>(
-                value: selectedCategory,
+                initialValue: selectedCategory,
                 items:
                     [
                           'Housing',
@@ -703,236 +758,90 @@ class MoneyDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildBudgetPreview(BuildContext context, MoneyProvider provider) {
-    final spending = provider.getMonthlySpending();
-    final budget = 600.0;
-    final ratio = spending / budget;
-    return Container(
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(24.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Monthly Budget',
-            style: GoogleFonts.outfit(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.white70,
-            ),
-          ),
-          SizedBox(height: 20.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '€${spending.toStringAsFixed(0)}/${budget.toStringAsFixed(0)}',
-                style: GoogleFonts.outfit(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                '${(ratio * 100).toStringAsFixed(0)}%',
-                style: GoogleFonts.inter(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.secondary,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4.r),
-            child: LinearProgressIndicator(
-              value: ratio.clamp(0.0, 1.0),
-              minHeight: 6.h,
-              backgroundColor: Colors.white10,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.secondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMonthlyChart(BuildContext context, MoneyProvider provider) {
+  Widget _buildSpendingAnalytics(BuildContext context, MoneyProvider provider) {
     final categoryData = provider.getCategorySpending();
-    List<BarChartGroupData> barGroups = [];
-    int i = 0;
-    categoryData.forEach((key, value) {
-      barGroups.add(
-        BarChartGroupData(
-          x: i++,
-          barRods: [
-            BarChartRodData(
-              toY: value,
-              color: AppColors.secondary,
-              width: 16.w,
-              borderRadius: BorderRadius.circular(4.r),
-            ),
-          ],
-        ),
-      );
-    });
-    return Container(
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Spending Analytics',
-            style: GoogleFonts.outfit(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          SizedBox(height: 24.h),
-          SizedBox(
-            height: 150.h,
-            child: BarChart(
-              BarChartData(
-                barGroups: barGroups,
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= categoryData.keys.length)
-                          return const SizedBox.shrink();
-                        return Padding(
-                          padding: EdgeInsets.only(top: 8.h),
-                          child: Text(
-                            categoryData.keys
-                                .elementAt(value.toInt())
-                                .substring(0, 3),
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: AppColors.textTertiaryLight,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    final total = categoryData.values.fold(0.0, (sum, item) => sum + item);
 
-  Widget _buildCurrencyCard(BuildContext context, MoneyProvider provider) {
-    return Container(
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'INR to Germany (Live)',
-                style: GoogleFonts.outfit(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              Icon(
-                Icons.sync_alt_rounded,
-                size: 18.sp,
-                color: AppColors.secondary,
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'SPENDING ANALYTICS',
+          style: GoogleFonts.inter(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textTertiaryLight,
+            letterSpacing: 1.5,
           ),
-          SizedBox(height: 16.h),
-          Row(
-            children: [
-              Expanded(
+        ),
+        SizedBox(height: 16.h),
+        Container(
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.08),
+            ),
+          ),
+          child: Column(
+            children: categoryData.entries.map((entry) {
+              final ratio = total > 0 ? entry.value / total : 0.0;
+              return Padding(
+                padding: EdgeInsets.only(bottom: 16.h),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '₹100 INR',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 8.w,
+                              height: 8.w,
+                              decoration: const BoxDecoration(
+                                color: AppColors.secondary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                            Text(
+                              entry.key,
+                              style: GoogleFonts.inter(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '€${entry.value.toStringAsFixed(0)}',
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'Indian Rupee',
-                      style: GoogleFonts.inter(
-                        fontSize: 11.sp,
-                        color: AppColors.textSecondaryLight,
+                    SizedBox(height: 8.h),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4.r),
+                      child: LinearProgressIndicator(
+                        value: ratio,
+                        minHeight: 6.h,
+                        backgroundColor: AppColors.secondary.withOpacity(0.05),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.secondary,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Icon(
-                Icons.arrow_forward_rounded,
-                size: 20.sp,
-                color: AppColors.textTertiaryLight,
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '€${(provider.inrToEurRate * 100).toStringAsFixed(2)}',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.secondary,
-                      ),
-                    ),
-                    Text(
-                      'Euro (Germany)',
-                      style: GoogleFonts.inter(
-                        fontSize: 11.sp,
-                        color: AppColors.textSecondaryLight,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              );
+            }).toList(),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

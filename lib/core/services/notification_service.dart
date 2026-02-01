@@ -3,6 +3,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 class NotificationService {
   static final NotificationService _notificationService =
@@ -40,6 +41,8 @@ class NotificationService {
         );
 
     tz.initializeTimeZones();
+    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
 
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
@@ -118,27 +121,39 @@ class NotificationService {
       }
     }
 
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'student_life_channel',
-          'Student Life Notifications',
-          channelDescription: 'Notifications for tasks and notes',
-          importance: Importance.max,
-          priority: Priority.high,
-          showWhen: true,
+    try {
+      final scheduledTZDate = tz.TZDateTime.from(scheduledDate, tz.local);
+
+      // Ensure date is in the future
+      if (scheduledTZDate.isBefore(tz.TZDateTime.now(tz.local))) {
+        debugPrint('Skip scheduling: Date $scheduledDate is in the past');
+        return;
+      }
+
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledTZDate,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'student_life_channel',
+            'Student Life Notifications',
+            channelDescription: 'Notifications for tasks and notes',
+            importance: Importance.max,
+            priority: Priority.high,
+            showWhen: true,
+          ),
+          iOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      debugPrint('Error scheduling notification: $e');
+    }
   }
 
   /// Show immediate notification

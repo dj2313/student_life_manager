@@ -105,7 +105,7 @@ class _LiveCurrencyConverterState extends State<LiveCurrencyConverter> {
                           ? SizedBox(
                               width: 16.sp,
                               height: 16.sp,
-                              child: CircularProgressIndicator(
+                              child: const CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation(
                                   AppColors.secondary,

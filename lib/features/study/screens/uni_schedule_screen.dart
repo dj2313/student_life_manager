@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -116,7 +117,13 @@ class _UniScheduleScreenState extends State<UniScheduleScreen>
                     ),
                   )
                 else
-                  ...lectures.map((l) => _buildLectureDetailCard(l)).toList(),
+                  ...lectures.map((l) {
+                    final index = lectures.indexOf(l);
+                    return _buildLectureDetailCard(l)
+                        .animate()
+                        .fadeIn(delay: (index * 100).ms, duration: 400.ms)
+                        .scale(begin: const Offset(0.98, 0.98));
+                  }).toList(),
               ],
             ),
           ),
@@ -188,9 +195,13 @@ class _UniScheduleScreenState extends State<UniScheduleScreen>
                     ),
                   )
                 else
-                  ...universities
-                      .map((uni) => _buildUniversityCard(uni))
-                      .toList(),
+                  ...universities.map((uni) {
+                    final index = universities.indexOf(uni);
+                    return _buildUniversityCard(uni)
+                        .animate()
+                        .fadeIn(delay: (index * 100).ms, duration: 400.ms)
+                        .slideX(begin: 0.1, end: 0);
+                  }).toList(),
               ],
             ),
           ),

@@ -97,11 +97,17 @@ class _TasksScreenState extends State<TasksScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildCompletionStatus(context, tasksProvider),
+                        _buildCompletionStatus(context, tasksProvider)
+                            .animate()
+                            .fadeIn(duration: 400.ms)
+                            .slideY(begin: 0.1, end: 0),
                         SizedBox(height: 32.h),
-                        _buildCategoryFilter(context, tasksProvider),
+                        _buildCategoryFilter(context, tasksProvider)
+                            .animate()
+                            .fadeIn(delay: 200.ms)
+                            .slideX(begin: 0.1, end: 0),
                         SizedBox(height: 24.h),
-                        _buildTabBar(context),
+                        _buildTabBar(context).animate().fadeIn(delay: 400.ms),
                         SizedBox(height: 24.h),
                       ],
                     ),
@@ -345,7 +351,10 @@ class _TasksScreenState extends State<TasksScreen>
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       itemCount: tasks.length,
       itemBuilder: (context, index) =>
-          _buildTaskCard(context, tasks[index], provider),
+          _buildTaskCard(context, tasks[index], provider)
+              .animate()
+              .fadeIn(delay: (index * 50).ms, duration: 300.ms)
+              .slideY(begin: 0.05, end: 0),
     );
   }
 
@@ -635,7 +644,7 @@ class _TasksScreenState extends State<TasksScreen>
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: selectedCategory,
+                      initialValue: selectedCategory,
                       items: ['Study', 'Money', 'Personal', 'Govt']
                           .map(
                             (c) => DropdownMenuItem(value: c, child: Text(c)),
@@ -656,7 +665,7 @@ class _TasksScreenState extends State<TasksScreen>
                       Switch(
                         value: shouldNotify,
                         onChanged: (v) => setModalState(() => shouldNotify = v),
-                        activeColor: AppColors.secondary,
+                        activeThumbColor: AppColors.secondary,
                       ),
                     ],
                   ),

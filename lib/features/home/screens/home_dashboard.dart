@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/context_extensions.dart';
 import '../../../core/constants/app_colors.dart';
 import '../providers/home_provider.dart';
 import '../../../data/models/ticket.dart';
@@ -53,33 +53,24 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         children: [
                           // NEW: Daily Summary Card
                           _buildDailySummaryCard(
-                                context,
-                                homeProvider,
-                                studyProvider,
-                                moneyProvider,
-                              )
-                              .animate()
-                              .fadeIn(duration: 500.ms)
-                              .slideY(begin: 0.1, end: 0),
+                            context,
+                            homeProvider,
+                            studyProvider,
+                            moneyProvider,
+                          ),
                           SizedBox(height: 24.h),
 
                           // Enhanced Visa Card
-                          _buildEnhancedVisaCard(context, homeProvider)
-                              .animate()
-                              .fadeIn(duration: 600.ms, delay: 100.ms)
-                              .slideY(begin: 0.2, end: 0),
+                          _buildEnhancedVisaCard(context, homeProvider),
                           SizedBox(height: 28.h),
 
                           // NEW: Quick Stats Row
                           _buildQuickStatsRow(
-                                context,
-                                moneyProvider,
-                                studyProvider,
-                                homeProvider,
-                              )
-                              .animate()
-                              .fadeIn(duration: 500.ms, delay: 200.ms)
-                              .slideY(begin: 0.1, end: 0),
+                            context,
+                            moneyProvider,
+                            studyProvider,
+                            homeProvider,
+                          ),
                           SizedBox(height: 32.h),
 
                           // Improved Quick Access
@@ -268,12 +259,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
           provider.locationName,
           style: GoogleFonts.inter(
             fontSize: 12.sp,
-            color: AppColors.textSecondaryLight,
+            color: context.textSecondary,
             fontWeight: FontWeight.w600,
           ),
         ),
       ],
-    ).animate().fadeIn(duration: 800.ms);
+    );
   }
 
   // NEW: Daily Summary Card
@@ -589,7 +580,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
               value: provider.visaDaysRemaining / 90,
               minHeight: 10.h,
               backgroundColor: Colors.white.withOpacity(0.15),
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.secondary,
+              ),
             ),
           ),
           SizedBox(height: 16.h),
@@ -709,7 +702,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
     String label,
     Color color,
   ) {
-    final index = ['Budget', 'Study', 'Tasks', 'Score'].indexOf(label);
     return Expanded(
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: 4.w),
@@ -737,12 +729,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
               style: GoogleFonts.inter(
                 fontSize: 10.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textTertiaryLight,
+                color: context.textTertiary,
               ),
             ),
           ],
         ),
-      ).animate().scale(delay: (100 * index).ms, duration: 400.ms),
+      ),
     );
   }
 
@@ -816,7 +808,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       style: GoogleFonts.inter(
         fontSize: 11.sp,
         fontWeight: FontWeight.w800,
-        color: AppColors.textTertiaryLight,
+        color: context.textTertiary,
         letterSpacing: 1.5,
       ),
     );
@@ -862,12 +854,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
             style: GoogleFonts.inter(
               fontSize: 12.sp,
               fontWeight: FontWeight.w600,
-              color: textColor,
+              color: context.textTertiary,
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(delay: (100 * index).ms).scale(duration: 400.ms);
+    );
   }
 
   Widget _buildBureaucracyChecklist(
@@ -893,7 +885,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           );
         }).toList(),
       ),
-    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1, end: 0);
+    );
   }
 
   Widget _buildChecklistItem(BuildContext context, BureaucracyTask task) {
@@ -983,10 +975,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         ),
         SizedBox(height: 8.h),
         ...provider.activeTickets.asMap().entries.map((entry) {
-          return _buildTicketCard(context, entry.value)
-              .animate()
-              .fadeIn(delay: (200 + (100 * entry.key)).ms)
-              .slideX(begin: 0.1, end: 0);
+          return _buildTicketCard(context, entry.value);
         }),
       ],
     );

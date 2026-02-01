@@ -26,4 +26,17 @@ class GermanSession {
     required this.durationHours,
     required this.topicsCovered,
   });
+
+  Map<String, dynamic> toJson() => {
+    'date': date.toIso8601String(),
+    'durationHours': durationHours,
+    'topicsCovered': topicsCovered,
+  };
+
+  factory GermanSession.fromJson(Map<String, dynamic> json) => GermanSession(
+    id: json['id'] ?? '',
+    date: DateTime.parse(json['date']),
+    durationHours: (json['durationHours'] ?? 0.0).toDouble(),
+    topicsCovered: json['topicsCovered'] ?? '',
+  );
 }

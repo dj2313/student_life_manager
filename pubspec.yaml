@@ -60,6 +60,7 @@ dependencies:
   # Notifications
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
+  flutter_timezone: ^2.0.0
   
   # Maps & Location
   google_maps_flutter: ^2.9.0

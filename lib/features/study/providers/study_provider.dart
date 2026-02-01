@@ -4,16 +4,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../data/models/lecture.dart';
 import '../../../data/models/study_models.dart';
 import '../../../data/models/university.dart';
+import '../../../core/services/notification_service.dart';
 
 class StudyProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String _germanLevel = 'A2';
+  String _germanLevel = 'A1';
   double _hoursLoggedThisWeek = 8;
-  double _weeklyTargetHours = 12;
+  final double _weeklyTargetHours = 12;
   double _germanClassFees = 250.0;
-  Map<String, DateTime> _examDates = {'A1': DateTime(2026, 2, 16)};
+  final Map<String, DateTime> _examDates = {'A1': DateTime(2026, 2, 16)};
 
   Map<String, String> _germanProgress = {
     'A1': 'Cleared',
@@ -51,8 +52,10 @@ class StudyProvider with ChangeNotifier {
       if (_auth.currentUser == null) {
         await _auth.signInAnonymously();
       }
+      await fetchData();
       await fetchUniversities();
       _loadMockData();
+      _scheduleGermanExamReminders();
     } catch (e) {
       debugPrint('StudyProvider Initialization Error: $e');
       _loadMockData();
@@ -64,7 +67,7 @@ class StudyProvider with ChangeNotifier {
       Lecture(
         id: '1',
         uniType: 'Public',
-        subject: 'German A2',
+        subject: 'German A1',
         dayOfWeek: DateTime.now().weekday,
         time: '10:00',
         room: 'Room 302',
@@ -109,10 +112,87 @@ class StudyProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void logSession(GermanSession session) {
+  void logSession(GermanSession session) async {
     _sessions.insert(0, session);
     _hoursLoggedThisWeek += session.durationHours;
     notifyListeners();
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('german_sessions')
+          .doc(session.id)
+          .set(session.toJson());
+    } catch (e) {
+      debugPrint('Error saving session to Firestore: $e');
+    }
+  }
+
+  Future<void> fetchData() async {
+    try {
+      final doc = await _firestore.collection('users').doc(_uid).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        _germanLevel = data['germanLevel'] ?? 'A1';
+        _germanClassFees = (data['germanClassFees'] ?? 250.0).toDouble();
+        if (data['germanProgress'] != null) {
+          _germanProgress = Map<String, String>.from(data['germanProgress']);
+        }
+      }
+
+      final sessionsSnapshot = await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('german_sessions')
+          .orderBy('date', descending: true)
+          .get();
+
+      if (sessionsSnapshot.docs.isNotEmpty) {
+        _sessions = sessionsSnapshot.docs
+            .map((d) => GermanSession.fromJson({...d.data(), 'id': d.id}))
+            .toList();
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching German data: $e');
+    }
+  }
+
+  Future<void> updateGermanLevel(String level) async {
+    _germanLevel = level;
+    notifyListeners();
+    await _firestore.collection('users').doc(_uid).set({
+      'germanLevel': level,
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> updateLevelStatus(String level, String status) async {
+    _germanProgress[level] = status;
+    notifyListeners();
+    await _firestore.collection('users').doc(_uid).set({
+      'germanProgress': _germanProgress,
+    }, SetOptions(merge: true));
+  }
+
+  void _scheduleGermanExamReminders() {
+    final examDate = _examDates['A1'];
+    if (examDate != null) {
+      final now = DateTime.now();
+      // Schedule for everyday until the exam at 6:30 PM
+      for (int i = 0; i < 30; i++) {
+        final reminderDate = DateTime(now.year, now.month, now.day + i, 18, 30);
+
+        if (reminderDate.isAfter(now) && reminderDate.isBefore(examDate)) {
+          NotificationService().scheduleNotification(
+            id: 1000 + i,
+            title: 'German A1 Exam Study!',
+            body: 'Focus! Your exam is on 16th Feb. Review your vocabulary.',
+            scheduledDate: reminderDate,
+          );
+        }
+      }
+    }
   }
 
   void updateGoal(String id, double progress) {
@@ -163,9 +243,12 @@ class StudyProvider with ChangeNotifier {
     }
   }
 
-  void updateGermanFees(double fees) {
+  void updateGermanFees(double fees) async {
     _germanClassFees = fees;
     notifyListeners();
+    await _firestore.collection('users').doc(_uid).set({
+      'germanClassFees': fees,
+    }, SetOptions(merge: true));
   }
 
   void updateExamDate(String level, DateTime date) {

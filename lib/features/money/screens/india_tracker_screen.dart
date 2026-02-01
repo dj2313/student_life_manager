@@ -80,8 +80,9 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
   }
 
   Widget _buildItemsTab(BuildContext context, IndiaTrackerProvider provider) {
-    if (provider.isLoading)
+    if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
 
     final categories = ['Clothes', 'Food', 'Electronics', 'Gifts', 'Misc'];
 
@@ -109,8 +110,9 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
     BuildContext context,
     IndiaTrackerProvider provider,
   ) {
-    if (provider.isLoading)
+    if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
 
     return ListView(
       padding: EdgeInsets.all(24.w),
@@ -416,7 +418,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
               SizedBox(height: 24.h),
               TextField(
                 controller: nameController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Item Name (e.g. Jeans)',
                   labelText: 'Name',
                 ),
@@ -428,7 +430,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
                     child: TextField(
                       controller: qtyController,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Quantity',
                         labelText: 'Qty',
                       ),
@@ -439,7 +441,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
                     child: TextField(
                       controller: inrController,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Value in ₹',
                         labelText: 'Value (INR)',
                       ),
@@ -449,7 +451,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
               ),
               SizedBox(height: 16.h),
               DropdownButtonFormField<String>(
-                value: selectedCategory,
+                initialValue: selectedCategory,
                 items: ['Clothes', 'Food', 'Electronics', 'Gifts', 'Misc']
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),
@@ -520,7 +522,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
               SizedBox(height: 24.h),
               TextField(
                 controller: titleController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'e.g. Flight Ticket',
                   labelText: 'Title',
                 ),
@@ -529,14 +531,14 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
               TextField(
                 controller: inrController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Amount in ₹',
                   labelText: 'Amount (INR)',
                 ),
               ),
               SizedBox(height: 16.h),
               DropdownButtonFormField<String>(
-                value: selectedType,
+                initialValue: selectedType,
                 items: ['Flight', 'Visa', 'Insurance', 'Setup', 'Misc']
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),
