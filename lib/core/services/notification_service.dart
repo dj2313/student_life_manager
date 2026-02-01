@@ -24,6 +24,11 @@ class NotificationService {
 
   /// Initialize notification service and request permissions
   Future<void> init() async {
+    if (kIsWeb) {
+      debugPrint("Notifications are not supported on web yet.");
+      return;
+    }
+
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -41,8 +46,12 @@ class NotificationService {
         );
 
     tz.initializeTimeZones();
-    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
+    try {
+      final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } catch (e) {
+      debugPrint('Error initializing timezone: $e');
+    }
 
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
@@ -57,6 +66,7 @@ class NotificationService {
 
   /// Request notification permissions
   Future<bool> requestPermissions() async {
+    if (kIsWeb) return false;
     try {
       // For Android 13+ (API 33+)
       if (await Permission.notification.isDenied) {
@@ -92,6 +102,7 @@ class NotificationService {
 
   /// Check current permission status
   Future<bool> checkPermissionStatus() async {
+    if (kIsWeb) return false;
     try {
       _permissionsGranted = await Permission.notification.isGranted;
       return _permissionsGranted;
@@ -112,6 +123,7 @@ class NotificationService {
     required String body,
     required DateTime scheduledDate,
   }) async {
+    if (kIsWeb) return;
     // Check permission before scheduling
     if (!_permissionsGranted) {
       final granted = await requestPermissions();
@@ -162,6 +174,7 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    if (kIsWeb) return;
     if (!_permissionsGranted) {
       final granted = await requestPermissions();
       if (!granted) return;
