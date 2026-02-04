@@ -8,6 +8,7 @@ class BureaucracyTask {
   final String category;
   final DateTime? deadline;
   final List<String> requiredDocuments;
+  final DateTime createdAt;
 
   BureaucracyTask({
     required this.id,
@@ -17,9 +18,14 @@ class BureaucracyTask {
     required this.category,
     this.deadline,
     this.requiredDocuments = const [],
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 
-  BureaucracyTask copyWith({BureaucracyStatus? status, DateTime? deadline}) {
+  BureaucracyTask copyWith({
+    BureaucracyStatus? status,
+    DateTime? deadline,
+    DateTime? createdAt,
+  }) {
     return BureaucracyTask(
       id: id,
       title: title,
@@ -28,21 +34,22 @@ class BureaucracyTask {
       category: category,
       deadline: deadline ?? this.deadline,
       requiredDocuments: requiredDocuments,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'description': description,
-    'status': status.name,
-    'category': category,
-    'deadline': deadline?.toIso8601String(),
-    'requiredDocuments': requiredDocuments,
-  };
+        'id': id,
+        'title': title,
+        'description': description,
+        'status': status.name,
+        'category': category,
+        'deadline': deadline?.toIso8601String(),
+        'requiredDocuments': requiredDocuments,
+        'createdAt': createdAt.toIso8601String(),
+      };
 
-  factory BureaucracyTask.fromJson(Map<String, dynamic> json) =>
-      BureaucracyTask(
+  factory BureaucracyTask.fromJson(Map<String, dynamic> json) => BureaucracyTask(
         id: json['id'],
         title: json['title'],
         description: json['description'],
@@ -50,11 +57,10 @@ class BureaucracyTask {
           (e) => e.name == json['status'],
           orElse: () => BureaucracyStatus.pending,
         ),
-        category: json['category'],
-        deadline: json['deadline'] != null
-            ? DateTime.parse(json['deadline'])
-            : null,
+        category: json['category'] ?? 'General',
+        deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
         requiredDocuments: List<String>.from(json['requiredDocuments'] ?? []),
+        createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
       );
 }
 

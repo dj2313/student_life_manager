@@ -10,8 +10,8 @@ import '../../../core/constants/app_colors.dart';
 import '../providers/money_provider.dart';
 import '../../../data/models/expense.dart';
 import 'india_tracker_screen.dart';
-import 'loan_screen.dart';
 import 'groceries_screen.dart';
+import 'blocked_account_screen.dart';
 import '../widgets/live_currency_converter.dart';
 import '../providers/job_provider.dart';
 
@@ -55,7 +55,6 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                         SizedBox(height: 40.h),
                         _buildJobTrackerSection(context),
                         SizedBox(height: 40.h),
-
                         _buildAccountsSection(context, moneyProvider),
                         SizedBox(height: 40.h),
                         _buildTransactionsSection(context, moneyProvider),
@@ -108,7 +107,8 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final spending = provider.getMonthlySpending();
     const budget = 600.0;
-    final ratio = spending / budget;
+    final rawRatio = budget > 0 ? spending / budget : 0.0;
+    final ratio = rawRatio.isFinite ? rawRatio : 0.0;
 
     return Container(
       width: double.infinity,
@@ -307,50 +307,57 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
 
   Widget _buildQuickActionChips(BuildContext context, MoneyProvider provider) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      children: [
-        _buildActionChip(
-          context,
-          Icons.add_task_rounded,
-          'EXPENSE',
-          AppColors.primary,
-          isDark,
-          () => _showAddExpenseDialog(context, provider),
+    return SizedBox(
+      height: 75.h,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            _buildActionChip(
+              context,
+              Icons.add_task_rounded,
+              'EXPENSE',
+              AppColors.primary,
+              isDark,
+              () => _showAddExpenseDialog(context, provider),
+            ),
+            SizedBox(width: 12.w),
+            _buildActionChip(
+              context,
+              Icons.document_scanner_rounded,
+              'SCAN',
+              AppColors.secondary,
+              isDark,
+              () => _simulateScan(context, provider),
+            ),
+            SizedBox(width: 12.w),
+            _buildActionChip(
+              context,
+              Icons.auto_awesome_motion_rounded,
+              'RATES',
+              AppColors.accent,
+              isDark,
+              () => _showCurrencyRatesSheet(context),
+            ),
+            SizedBox(width: 12.w),
+            _buildActionChip(
+              context,
+              Icons.inventory_2_outlined,
+              'ITEMS',
+              AppColors.success,
+              isDark,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const GroceriesScreen(),
+                ),
+              ),
+            ),
+            SizedBox(width: 12.w),
+          ],
         ),
-        SizedBox(width: 12.w),
-        _buildActionChip(
-          context,
-          Icons.auto_awesome_motion_rounded,
-          'RATES',
-          AppColors.secondary,
-          isDark,
-          () => _showCurrencyRatesSheet(context),
-        ),
-        SizedBox(width: 12.w),
-        _buildActionChip(
-          context,
-          Icons.inventory_2_outlined,
-          'ITEMS',
-          AppColors.accent,
-          isDark,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const GroceriesScreen()),
-          ),
-        ),
-        SizedBox(width: 12.w),
-        _buildActionChip(
-          context,
-          Icons.assured_workload_outlined,
-          'LOANS',
-          AppColors.success,
-          isDark,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const LoanScreen()),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -363,49 +370,48 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     VoidCallback onTap, {
     bool isActive = false,
   }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          context.hapticClick();
-          onTap();
-        },
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 14.h),
-          decoration: BoxDecoration(
+    return GestureDetector(
+      onTap: () {
+        context.hapticClick();
+        onTap();
+      },
+      child: Container(
+        width: 85.w,
+        padding: EdgeInsets.symmetric(vertical: 14.h),
+        decoration: BoxDecoration(
+          color: isActive
+              ? color
+              : (isDark ? Colors.white.withOpacity(0.02) : Colors.white),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
             color: isActive
                 ? color
-                : (isDark ? Colors.white.withOpacity(0.02) : Colors.white),
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: isActive
-                  ? color
-                  : (isDark
-                        ? Colors.white.withOpacity(0.05)
-                        : Colors.black.withOpacity(0.04)),
-              width: 1.5,
+                : (isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.black.withOpacity(0.04)),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isActive ? Colors.white : color.withOpacity(0.8),
+              size: 20.sp,
             ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                color: isActive ? Colors.white : color.withOpacity(0.8),
-                size: 20.sp,
+            SizedBox(height: 8.h),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 9.sp,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+                color: isActive
+                    ? Colors.white
+                    : (isDark ? Colors.white38 : Colors.black38),
               ),
-              SizedBox(height: 8.h),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                  color: isActive
-                      ? Colors.white
-                      : (isDark ? Colors.white38 : Colors.black38),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -456,7 +462,9 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                 fontSize: 10.sp,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.5,
-                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                color: isDark
+                    ? AppColors.textTertiaryDark
+                    : AppColors.textTertiaryLight,
               ),
             ),
             TextButton(
@@ -479,7 +487,12 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
           '€${provider.blockedAccountBalance.toStringAsFixed(2)}',
           Icons.verified_user_outlined,
           AppColors.primary,
-          () => _showUpdateSheet(context, provider, isBlocked: true),
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BlockedAccountScreen(),
+            ),
+          ),
         ),
         SizedBox(height: 12.h),
         _buildMiniAccountTile(
@@ -512,7 +525,9 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
           color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.035),
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.035),
             width: 1.5,
           ),
         ),
@@ -544,7 +559,9 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                     'Active Portfolio Balance',
                     style: GoogleFonts.inter(
                       fontSize: 11.sp,
-                      color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                      color: isDark
+                          ? AppColors.textTertiaryDark
+                          : AppColors.textTertiaryLight,
                     ),
                   ),
                 ],
@@ -709,11 +726,18 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     );
   }
 
-  void _showAddExpenseDialog(BuildContext context, MoneyProvider provider) {
-    final descController = TextEditingController();
-    final amountController = TextEditingController();
-    DateTime selectedDate = DateTime.now();
-    String selectedCategory = 'Food';
+  void _showAddExpenseDialog(
+    BuildContext context,
+    MoneyProvider provider, {
+    Expense? expense,
+  }) {
+    final descController = TextEditingController(text: expense?.description);
+    final amountController = TextEditingController(
+      text: expense?.amount.toString(),
+    );
+    DateTime selectedDate = expense?.date ?? DateTime.now();
+    String selectedCategory = expense?.category ?? 'Food';
+    bool isBlocked = expense?.isBlockedAccount ?? false;
 
     showModalBottomSheet(
       context: context,
@@ -729,12 +753,28 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Log Expense',
-                style: GoogleFonts.outfit(
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    expense == null ? 'Record Expense' : 'Modify Record',
+                    style: GoogleFonts.outfit(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (expense != null)
+                    IconButton(
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        color: AppColors.error,
+                      ),
+                      onPressed: () {
+                        provider.deleteExpense(expense);
+                        Navigator.pop(context);
+                      },
+                    ),
+                ],
               ),
               SizedBox(height: 24.h),
               InkWell(
@@ -763,28 +803,35 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                     }
                   }
                 },
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                child: Container(
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.calendar_today_rounded,
-                        size: 16.sp,
-                        color: AppColors.secondary,
+                        size: 18.sp,
+                        color: AppColors.primary,
                       ),
-                      SizedBox(width: 8.w),
+                      SizedBox(width: 12.w),
                       Text(
-                        DateFormat('MMM dd, HH:mm').format(selectedDate),
+                        DateFormat(
+                          'EEE, MMM dd, yyyy • hh:mm a',
+                        ).format(selectedDate),
                         style: GoogleFonts.inter(
                           fontSize: 14.sp,
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
+              SizedBox(height: 16.h),
               TextField(
                 controller: descController,
                 decoration: const InputDecoration(labelText: 'Description'),
@@ -797,7 +844,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
               ),
               SizedBox(height: 16.h),
               DropdownButtonFormField<String>(
-                initialValue: selectedCategory,
+                value: selectedCategory,
                 items:
                     [
                           'Housing',
@@ -812,6 +859,23 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                 onChanged: (v) => setState(() => selectedCategory = v!),
                 decoration: const InputDecoration(labelText: 'Category'),
               ),
+              SizedBox(height: 16.h),
+              SwitchListTile(
+                title: Text(
+                  'Blocked Account Transaction',
+                  style: GoogleFonts.inter(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  'Withdrawal from blocked assets',
+                  style: GoogleFonts.inter(fontSize: 11.sp),
+                ),
+                value: isBlocked,
+                onChanged: (v) => setState(() => isBlocked = v),
+                activeColor: AppColors.secondary,
+              ),
               SizedBox(height: 32.h),
               SizedBox(
                 width: double.infinity,
@@ -820,22 +884,29 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                   onPressed: () {
                     if (descController.text.isNotEmpty &&
                         amountController.text.isNotEmpty) {
-                      provider.addExpense(
-                        Expense(
-                          id: const Uuid().v4(),
-                          description: descController.text,
-                          amount: double.tryParse(amountController.text) ?? 0,
-                          date: selectedDate,
-                          category: selectedCategory,
-                        ),
+                      final newExpense = Expense(
+                        id: expense?.id ?? const Uuid().v4(),
+                        description: descController.text,
+                        amount: double.tryParse(amountController.text) ?? 0,
+                        date: selectedDate,
+                        category: selectedCategory,
+                        isBlockedAccount: isBlocked,
                       );
+
+                      if (expense == null) {
+                        provider.addExpense(newExpense);
+                      } else {
+                        provider.updateExpense(newExpense);
+                      }
                       Navigator.pop(context);
                     }
                   },
-                  child: const Text('Add Expense'),
+                  child: Text(
+                    expense == null ? 'RECORD SETTLEMENT' : 'UPDATE RECORD',
+                  ),
                 ),
               ),
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 20),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
             ],
           ),
         ),
@@ -1032,7 +1103,9 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                 fontSize: 10.sp,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.5,
-                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                color: isDark
+                    ? AppColors.textTertiaryDark
+                    : AppColors.textTertiaryLight,
               ),
             ),
             GestureDetector(
@@ -1057,13 +1130,17 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                 'No recorded transactions',
                 style: GoogleFonts.inter(
                   fontSize: 13.sp,
-                  color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                  color: isDark
+                      ? AppColors.textTertiaryDark
+                      : AppColors.textTertiaryLight,
                 ),
               ),
             ),
           )
         else
-          ...provider.expenses.take(5).map((expense) => _buildTransactionItem(context, expense)),
+          ...provider.expenses.take(5).map((expense) {
+            return _buildTransactionItem(context, expense);
+          }),
       ],
     );
   }
@@ -1071,68 +1148,101 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
   Widget _buildTransactionItem(BuildContext context, Expense expense) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoryColor = _getCategoryColor(expense.category);
+    final provider = Provider.of<MoneyProvider>(context, listen: false);
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.015) : Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
-          width: 1.2,
+    return GestureDetector(
+      onTap: () => _showAddExpenseDialog(context, provider, expense: expense),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.015) : Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.04)
+                : Colors.black.withOpacity(0.03),
+            width: 1.2,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(10.w),
-            decoration: BoxDecoration(
-              color: categoryColor.withOpacity(0.12),
-              shape: BoxShape.circle,
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: categoryColor.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _getCategoryIcon(expense.category),
+                color: categoryColor,
+                size: 20.sp,
+              ),
             ),
-            child: Icon(
-              _getCategoryIcon(expense.category),
-              color: categoryColor,
-              size: 20.sp,
-            ),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  expense.description.toUpperCase(),
-                  style: GoogleFonts.inter(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
-                    color: isDark ? Colors.white : AppColors.primary,
+            SizedBox(width: 16.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        expense.description.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                          color: isDark ? Colors.white : AppColors.primary,
+                        ),
+                      ),
+                      if (expense.isBlockedAccount) ...[
+                        SizedBox(width: 6.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text(
+                            'BLOCKED',
+                            style: GoogleFonts.inter(
+                              fontSize: 8.sp,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.secondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  DateFormat('MMM dd • HH:mm').format(expense.date),
-                  style: GoogleFonts.inter(
-                    fontSize: 11.sp,
-                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                    fontWeight: FontWeight.w500,
+                  SizedBox(height: 2.h),
+                  Text(
+                    DateFormat('EEE, MMM dd • hh:mm a').format(expense.date),
+                    style: GoogleFonts.inter(
+                      fontSize: 10.sp,
+                      color: isDark
+                          ? AppColors.textTertiaryDark
+                          : AppColors.textTertiaryLight,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Text(
-            '-€${expense.amount.toStringAsFixed(2)}',
-            style: GoogleFonts.outfit(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w800,
-              color: isDark ? AppColors.error : AppColors.error,
-              letterSpacing: -0.5,
+            Text(
+              '-€${expense.amount.toStringAsFixed(2)}',
+              style: GoogleFonts.outfit(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : AppColors.primary,
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1312,6 +1422,234 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
             fontWeight: FontWeight.w800,
             letterSpacing: 0.5,
             color: isDark ? Colors.white70 : AppColors.primary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _simulateScan(BuildContext context, MoneyProvider provider) async {
+    // Show scanning animation
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: EdgeInsets.all(32.w),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(24.r),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                    Icons.document_scanner_rounded,
+                    size: 48.sp,
+                    color: AppColors.secondary,
+                  )
+                  .animate(onPlay: (controller) => controller.repeat())
+                  .shimmer(duration: 1.5.seconds),
+              SizedBox(height: 16.h),
+              Text(
+                'Scanning Receipt...',
+                style: GoogleFonts.outfit(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Simulate OCR processing
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!context.mounted) return;
+    Navigator.pop(context); // Close scanning dialog
+
+    // Simulated receipt data (German supermarket)
+    final scannedData = {
+      'store': 'REWE',
+      'amount': 23.47,
+      'category': 'Food',
+      'items': ['Milch 1.5%', 'Brot Vollkorn', 'Äpfel 1kg', 'Käse Gouda'],
+    };
+
+    // Show parsed receipt with pre-filled expense dialog
+    _showScannedReceiptDialog(context, provider, scannedData);
+  }
+
+  void _showScannedReceiptDialog(
+    BuildContext context,
+    MoneyProvider provider,
+    Map<String, dynamic> data,
+  ) {
+    final amountController = TextEditingController(
+      text: data['amount'].toString(),
+    );
+    final descController = TextEditingController(
+      text: '${data['store']} - ${(data['items'] as List).join(', ')}',
+    );
+    DateTime selectedDate = DateTime.now();
+    String selectedCategory = data['category'];
+    bool isBlocked = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => Container(
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.success,
+                    size: 24.sp,
+                  ),
+                  SizedBox(width: 12.w),
+                  Text(
+                    'Receipt Scanned Successfully',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24.h),
+              Container(
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16.r),
+                  border: Border.all(
+                    color: AppColors.secondary.withOpacity(0.2),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DETECTED ITEMS',
+                      style: GoogleFonts.inter(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.secondary,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    ...(data['items'] as List).map(
+                      (item) => Padding(
+                        padding: EdgeInsets.only(bottom: 4.h),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check,
+                              size: 14.sp,
+                              color: AppColors.success,
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              item,
+                              style: GoogleFonts.inter(fontSize: 12.sp),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 24.h),
+              TextField(
+                controller: descController,
+                decoration: const InputDecoration(labelText: 'Description'),
+              ),
+              SizedBox(height: 16.h),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Amount (€)'),
+              ),
+              SizedBox(height: 16.h),
+              DropdownButtonFormField<String>(
+                value: selectedCategory,
+                items:
+                    [
+                          'Housing',
+                          'Food',
+                          'Entertainment',
+                          'Education',
+                          'Travel',
+                          'Govt',
+                        ]
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                onChanged: (v) => setState(() => selectedCategory = v!),
+                decoration: const InputDecoration(labelText: 'Category'),
+              ),
+              SizedBox(height: 16.h),
+              SwitchListTile(
+                title: Text(
+                  'Blocked Account Transaction',
+                  style: GoogleFonts.inter(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                value: isBlocked,
+                onChanged: (v) => setState(() => isBlocked = v),
+                activeColor: AppColors.secondary,
+              ),
+              SizedBox(height: 32.h),
+              SizedBox(
+                width: double.infinity,
+                height: 56.h,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (descController.text.isNotEmpty &&
+                        amountController.text.isNotEmpty) {
+                      final newExpense = Expense(
+                        id: const Uuid().v4(),
+                        description: descController.text,
+                        amount: double.tryParse(amountController.text) ?? 0,
+                        date: selectedDate,
+                        category: selectedCategory,
+                        isBlockedAccount: isBlocked,
+                      );
+                      provider.addExpense(newExpense);
+                      Navigator.pop(context);
+
+                      // Show success snackbar
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '€${newExpense.amount.toStringAsFixed(2)} expense logged!',
+                          ),
+                          backgroundColor: AppColors.success,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('CONFIRM & LOG EXPENSE'),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+            ],
           ),
         ),
       ),

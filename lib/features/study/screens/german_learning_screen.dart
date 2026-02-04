@@ -103,19 +103,19 @@ class GermanLearningScreen extends StatelessWidget {
   Widget _buildProgressCard(BuildContext context, StudyProvider provider) {
     final progress = provider.hoursLoggedThisWeek / provider.weeklyTargetHours;
     return Container(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.all(28.w),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, Color(0xFF4F46E5)],
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primary.withBlue(255)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(30.r),
+        borderRadius: BorderRadius.circular(32.r),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: AppColors.primary.withOpacity(0.25),
+            blurRadius: 25,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -128,18 +128,22 @@ class GermanLearningScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Level ${provider.germanLevel}',
+                    'GERMAN LEVEL: ${provider.germanLevel}',
                     style: GoogleFonts.inter(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white.withOpacity(0.7),
+                      letterSpacing: 1.2,
                     ),
                   ),
+                  SizedBox(height: 4.h),
                   Text(
-                    '${provider.hoursLoggedThisWeek}h / ${provider.weeklyTargetHours}h',
+                    '${provider.hoursLoggedThisWeek} / ${provider.weeklyTargetHours} hrs',
                     style: GoogleFonts.outfit(
-                      fontSize: 32.sp,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 34.sp,
+                      fontWeight: FontWeight.w800,
                       color: Colors.white,
+                      letterSpacing: -1,
                     ),
                   ),
                 ],
@@ -147,43 +151,79 @@ class GermanLearningScreen extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.auto_graph_rounded,
+                child: Icon(
+                  Icons.auto_awesome_rounded,
                   color: Colors.white,
+                  size: 24.sp,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 20.h),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10.r),
-            child: LinearProgressIndicator(
-              value: progress.clamp(0, 1),
-              minHeight: 12.h,
-              backgroundColor: Colors.white.withOpacity(0.1),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.secondary,
+          SizedBox(height: 24.h),
+          Stack(
+            children: [
+              Container(
+                height: 10.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(5.r),
+                ),
               ),
-            ),
+              AnimatedFractionallySizedBox(
+                duration: 1.seconds,
+                widthFactor: progress.clamp(0.01, 1.0),
+                child: Container(
+                  height: 10.h,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.secondary, Color(0xFFFBDB6B)],
+                    ),
+                    borderRadius: BorderRadius.circular(5.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.secondary.withOpacity(0.5),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 14.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Keep going! ${(progress * 100).toInt()}% achieved.',
-                style: GoogleFonts.inter(color: Colors.white, fontSize: 12.sp),
+                'Velocity: ${(progress * 100).toInt()}% towards goal',
+                style: GoogleFonts.inter(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (provider.examDates.containsKey(provider.germanLevel))
-                Text(
-                  'Exam: ${DateFormat('MMM dd').format(provider.examDates[provider.germanLevel]!)}',
-                  style: GoogleFonts.inter(
-                    color: AppColors.secondary,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Text(
+                    'Exam: ${DateFormat('MMM dd').format(provider.examDates[provider.germanLevel]!)}',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
             ],
@@ -288,38 +328,34 @@ class GermanLearningScreen extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 3,
-      mainAxisSpacing: 12.w,
-      crossAxisSpacing: 12.w,
+      mainAxisSpacing: 14.w,
+      crossAxisSpacing: 14.w,
       childAspectRatio: 1,
       children: provider.germanProgress.entries.map((entry) {
         final level = entry.key;
         final status = entry.value;
         final isCurrent = provider.germanLevel == level;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
-        Color bgColor;
-        Color textColor;
+        Color accentColor;
         IconData? icon;
 
         switch (status) {
           case 'Cleared':
-            bgColor = AppColors.primary.withOpacity(0.1);
-            textColor = AppColors.primary;
-            icon = Icons.check_circle_rounded;
+            accentColor = AppColors.primary;
+            icon = Icons.verified_rounded;
             break;
           case 'Running':
-            bgColor = AppColors.accent.withOpacity(0.1);
-            textColor = AppColors.accent;
-            icon = Icons.play_circle_fill_rounded;
+            accentColor = AppColors.accent;
+            icon = Icons.bolt_rounded;
             break;
           case 'Completed':
-            bgColor = AppColors.secondary.withOpacity(0.1);
-            textColor = AppColors.secondary;
-            icon = Icons.stars_rounded;
+            accentColor = AppColors.secondary;
+            icon = Icons.emoji_events_rounded;
             break;
           default:
-            bgColor = Theme.of(context).cardTheme.color!;
-            textColor = AppColors.textSecondaryLight;
-            icon = null;
+            accentColor = AppColors.textTertiaryLight;
+            icon = Icons.lock_outline_rounded;
         }
 
         return GestureDetector(
@@ -327,36 +363,51 @@ class GermanLearningScreen extends StatelessWidget {
             context.hapticClick();
             _showLevelStatusDialog(context, provider, level);
           },
-
           child: Container(
             decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(20.r),
-              border: isCurrent
-                  ? Border.all(color: AppColors.primary, width: 2)
-                  : Border.all(color: Theme.of(context).dividerColor),
+              color: isCurrent
+                  ? accentColor.withOpacity(0.1)
+                  : (isDark ? Colors.white.withOpacity(0.02) : Colors.white),
+              borderRadius: BorderRadius.circular(24.r),
+              border: Border.all(
+                color: isCurrent
+                    ? accentColor
+                    : (isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.black.withOpacity(0.035)),
+                width: isCurrent ? 2 : 1.5,
+              ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (icon != null) ...[
-                  Icon(icon, color: textColor, size: 20.sp),
-                  SizedBox(height: 4.h),
-                ],
+                Icon(
+                  icon,
+                  color: isCurrent || status != 'Pending'
+                      ? accentColor
+                      : accentColor.withOpacity(0.3),
+                  size: 22.sp,
+                ),
+                SizedBox(height: 8.h),
                 Text(
                   level,
                   style: GoogleFonts.outfit(
                     fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                    color: isCurrent ? AppColors.primary : textColor,
+                    fontWeight: FontWeight.w800,
+                    color: isCurrent || status != 'Pending'
+                        ? accentColor
+                        : accentColor.withOpacity(0.35),
                   ),
                 ),
                 Text(
-                  status,
+                  status.toUpperCase(),
                   style: GoogleFonts.inter(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w500,
-                    color: textColor.withOpacity(0.7),
+                    fontSize: 8.sp,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                    color: isCurrent || status != 'Pending'
+                        ? accentColor.withOpacity(0.7)
+                        : accentColor.withOpacity(0.3),
                   ),
                 ),
               ],

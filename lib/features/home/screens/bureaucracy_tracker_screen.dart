@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -30,6 +31,9 @@ class BureaucracyTrackerScreen extends StatelessWidget {
                   SizedBox(height: 16.h),
                   Consumer<BureaucracyProvider>(
                     builder: (context, provider, child) {
+                      if (provider.isLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
                       return ListView.builder(
                         padding: EdgeInsets.zero,
                         shrinkWrap: true,
@@ -227,13 +231,28 @@ class BureaucracyTrackerScreen extends StatelessWidget {
               color: isCompleted ? context.textSecondary : null,
             ),
           ),
-          subtitle: Text(
-            task.category,
-            style: GoogleFonts.inter(
-              fontSize: 11.sp,
-              color: isCompleted ? AppColors.success : context.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                task.category,
+                style: GoogleFonts.inter(
+                  fontSize: 11.sp,
+                  color: isCompleted
+                      ? AppColors.success
+                      : context.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                DateFormat('EEE, MMM dd • hh:mm a').format(task.createdAt),
+                style: GoogleFonts.inter(
+                  fontSize: 9.sp,
+                  color: context.textTertiary,
+                ),
+              ),
+            ],
           ),
           children: [
             Padding(

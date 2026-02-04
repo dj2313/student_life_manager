@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../providers/india_tracker_provider.dart';
+import '../providers/money_provider.dart';
 import '../../../data/models/india_tracker_models.dart';
 import 'package:uuid/uuid.dart';
+import 'package:intl/intl.dart';
 
 class IndiaTrackerScreen extends StatefulWidget {
   const IndiaTrackerScreen({super.key});
@@ -28,63 +31,94 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
   Widget build(BuildContext context) {
     return Consumer<IndiaTrackerProvider>(
       builder: (context, provider, child) {
-        final textColor = Theme.of(context).colorScheme.primary;
+        return Consumer<MoneyProvider>(
+          builder: (context, moneyProvider, child) {
+            final textColor = Theme.of(context).colorScheme.primary;
 
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: textColor,
-                size: 20.sp,
+            return Scaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                leadingWidth: 120.w,
+                leading: Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: textColor,
+                        size: 20.sp,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    _buildCurrencySelector(context, moneyProvider),
+                  ],
+                ),
+                title: Text(
+                  'India → Germany',
+                  style: GoogleFonts.outfit(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
+                centerTitle: true,
+                bottom: TabBar(
+                  controller: _tabController,
+                  indicatorColor: AppColors.secondary,
+                  labelColor: textColor,
+                  unselectedLabelColor: AppColors.textTertiaryLight,
+                  tabs: const [
+                    Tab(text: 'Items Inventory'),
+                    Tab(text: 'Travel Expenses'),
+                  ],
+                ),
               ),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: Text(
-              'India → Germany',
-              style: GoogleFonts.outfit(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: textColor,
+              body: Column(
+                children: [
+                  _buildReadinessProgress(context, provider),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildItemsTab(context, provider, moneyProvider),
+                        _buildExpensesTab(context, provider, moneyProvider),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: AppColors.secondary,
-              labelColor: textColor,
-              unselectedLabelColor: AppColors.textTertiaryLight,
-              tabs: const [
-                Tab(text: 'Items Inventory'),
-                Tab(text: 'Travel Expenses'),
-              ],
-            ),
-          ),
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildItemsTab(context, provider),
-              _buildExpensesTab(context, provider),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _showAddDialog(context, provider),
-            backgroundColor: AppColors.primary,
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
+              floatingActionButton: FloatingActionButton(
+                onPressed: () =>
+                    _showAddDialog(context, provider, moneyProvider),
+                backgroundColor: AppColors.primary,
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildItemsTab(BuildContext context, IndiaTrackerProvider provider) {
+  Widget _buildItemsTab(
+    BuildContext context,
+    IndiaTrackerProvider provider,
+    MoneyProvider moneyProvider,
+  ) {
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
     final categories = ['Clothes', 'Food', 'Electronics', 'Gifts', 'Misc'];
+    final convertedTotal = moneyProvider.convertCurrency(
+      provider.totalItemValueEur,
+      'EUR',
+      moneyProvider.selectedCurrency,
+    );
+    final symbol = moneyProvider.getCurrencySymbol(
+      moneyProvider.selectedCurrency,
+    );
 
     return ListView(
       padding: EdgeInsets.all(24.w),
@@ -93,14 +127,20 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
         _buildStatCard(
           context,
           'Total Inventory Value',
-          '€${provider.totalItemValueEur.toStringAsFixed(2)}',
+          '$symbol${convertedTotal.toStringAsFixed(2)}',
           Icons.inventory_2_outlined,
-        ),
+        ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
         SizedBox(height: 32.h),
         ...categories.map((cat) {
           final items = provider.items.where((i) => i.category == cat).toList();
           if (items.isEmpty) return const SizedBox.shrink();
-          return _buildCategorySection(context, cat, items, provider);
+          return _buildCategorySection(
+            context,
+            cat,
+            items,
+            provider,
+            moneyProvider,
+          );
         }),
       ],
     );
@@ -109,10 +149,20 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
   Widget _buildExpensesTab(
     BuildContext context,
     IndiaTrackerProvider provider,
+    MoneyProvider moneyProvider,
   ) {
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    final convertedTotal = moneyProvider.convertCurrency(
+      provider.totalTravelExpenseEur,
+      'EUR',
+      moneyProvider.selectedCurrency,
+    );
+    final symbol = moneyProvider.getCurrencySymbol(
+      moneyProvider.selectedCurrency,
+    );
 
     return ListView(
       padding: EdgeInsets.all(24.w),
@@ -121,9 +171,9 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
         _buildStatCard(
           context,
           'Total Journey Cost',
-          '€${provider.totalTravelExpenseEur.toStringAsFixed(2)}',
+          '$symbol${convertedTotal.toStringAsFixed(2)}',
           Icons.flight_takeoff_rounded,
-        ),
+        ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
         SizedBox(height: 32.h),
         Text(
           'EXPENSE LOG',
@@ -133,11 +183,16 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
             color: AppColors.textTertiaryLight,
             letterSpacing: 1.5,
           ),
-        ),
+        ).animate().fadeIn(delay: 200.ms),
         SizedBox(height: 16.h),
-        ...provider.travelExpenses.map(
-          (exp) => _buildExpenseTile(context, exp),
-        ),
+        ...provider.travelExpenses.indexed.map((item) {
+          final index = item.$1;
+          final exp = item.$2;
+          return _buildExpenseTile(context, exp, moneyProvider)
+              .animate(delay: (100 * index).ms)
+              .fadeIn()
+              .slideX(begin: 0.1, end: 0);
+        }),
       ],
     );
   }
@@ -206,6 +261,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
     String cat,
     List<IndiaItem> items,
     IndiaTrackerProvider provider,
+    MoneyProvider moneyProvider,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,8 +277,13 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
               letterSpacing: 1.5,
             ),
           ),
+        ).animate().fadeIn(),
+        ...items.indexed.map(
+          (item) => _buildItemTile(context, item.$2, provider, moneyProvider)
+              .animate(delay: (50 * item.$1).ms)
+              .fadeIn()
+              .slideX(begin: 0.1, end: 0),
         ),
-        ...items.map((item) => _buildItemTile(context, item, provider)),
       ],
     );
   }
@@ -231,7 +292,18 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
     BuildContext context,
     IndiaItem item,
     IndiaTrackerProvider provider,
+    MoneyProvider moneyProvider,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final convertedVal = moneyProvider.convertCurrency(
+      item.valueEur,
+      'EUR',
+      moneyProvider.selectedCurrency,
+    );
+    final symbol = moneyProvider.getCurrencySymbol(
+      moneyProvider.selectedCurrency,
+    );
+
     return Dismissible(
       key: Key(item.id),
       direction: DismissDirection.endToStart,
@@ -246,153 +318,231 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       onDismissed: (_) => provider.deleteItem(item.id),
-      child: Container(
-        margin: EdgeInsets.only(bottom: 12.h),
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: AppColors.secondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Text(
-                '${item.quantity}x',
-                style: GoogleFonts.jetBrainsMono(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.secondary,
-                  fontSize: 12.sp,
-                ),
-              ),
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Text(
-                item.name,
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14.sp,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '€${item.valueEur.toStringAsFixed(0)}',
-                  style: GoogleFonts.outfit(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                Text(
-                  '₹${item.valueInr.toStringAsFixed(0)}',
-                  style: GoogleFonts.inter(
-                    fontSize: 10.sp,
-                    color: AppColors.textSecondaryLight,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExpenseTile(BuildContext context, IndiaTravelExpense exp) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(10.w),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Icon(
-              exp.type == 'Flight'
-                  ? Icons.flight_takeoff_rounded
-                  : Icons.description_outlined,
-              color: AppColors.primary,
-              size: 20.sp,
+      child: GestureDetector(
+        onLongPress: () =>
+            _showAddItemDialog(context, provider, moneyProvider, item: item),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 12.h),
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.015) : Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.black.withOpacity(0.035),
             ),
           ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exp.title,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                Text(
-                  exp.description,
-                  style: GoogleFonts.inter(
-                    fontSize: 12.sp,
-                    color: AppColors.textSecondaryLight,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Row(
             children: [
-              Text(
-                '€${exp.amountEur.toStringAsFixed(0)}',
-                style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Text(
+                  '${item.quantity}x',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
+                    fontSize: 12.sp,
+                  ),
                 ),
               ),
-              Text(
-                '₹${exp.amountInr.toStringAsFixed(0)}',
-                style: GoogleFonts.inter(
-                  fontSize: 10.sp,
-                  color: AppColors.textSecondaryLight,
+              SizedBox(width: 16.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.name,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.sp,
+                        color: isDark ? Colors.white : AppColors.primary,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('EEE, MMM dd • hh:mm a').format(item.date),
+                      style: GoogleFonts.inter(
+                        fontSize: 10.sp,
+                        color: isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textTertiaryLight,
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$symbol${convertedVal.toStringAsFixed(0)}',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : AppColors.primary,
+                    ),
+                  ),
+                  Text(
+                    '₹${item.valueInr.toStringAsFixed(0)}',
+                    style: GoogleFonts.inter(
+                      fontSize: 10.sp,
+                      color: AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  void _showAddDialog(BuildContext context, IndiaTrackerProvider provider) {
+  Widget _buildExpenseTile(
+    BuildContext context,
+    IndiaTravelExpense exp,
+    MoneyProvider moneyProvider,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final provider = Provider.of<IndiaTrackerProvider>(context, listen: false);
+    final convertedVal = moneyProvider.convertCurrency(
+      exp.amountEur,
+      'EUR',
+      moneyProvider.selectedCurrency,
+    );
+    final symbol = moneyProvider.getCurrencySymbol(
+      moneyProvider.selectedCurrency,
+    );
+
+    return Dismissible(
+      key: Key(exp.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 20.w),
+        margin: EdgeInsets.only(bottom: 12.h),
+        decoration: BoxDecoration(
+          color: AppColors.error,
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white),
+      ),
+      onDismissed: (_) => provider.deleteTravelExpense(exp.id),
+      child: GestureDetector(
+        onLongPress: () => _showAddExpenseDialog(
+          context,
+          provider,
+          moneyProvider,
+          expense: exp,
+        ),
+        child: Container(
+          margin: EdgeInsets.only(bottom: 12.h),
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.015) : Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.black.withOpacity(0.035),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  exp.type == 'Flight'
+                      ? Icons.flight_takeoff_rounded
+                      : Icons.description_outlined,
+                  color: AppColors.primary,
+                  size: 20.sp,
+                ),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      exp.title,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : AppColors.primary,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('EEE, MMM dd • hh:mm a').format(exp.date),
+                      style: GoogleFonts.inter(
+                        fontSize: 10.sp,
+                        color: isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textTertiaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$symbol${convertedVal.toStringAsFixed(0)}',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : AppColors.primary,
+                    ),
+                  ),
+                  Text(
+                    '₹${exp.amountInr.toStringAsFixed(0)}',
+                    style: GoogleFonts.inter(
+                      fontSize: 10.sp,
+                      color: AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddDialog(
+    BuildContext context,
+    IndiaTrackerProvider provider,
+    MoneyProvider moneyProvider,
+  ) {
     if (_tabController.index == 0) {
-      _showAddItemDialog(context, provider);
+      _showAddItemDialog(context, provider, moneyProvider);
     } else {
-      _showAddExpenseDialog(context, provider);
+      _showAddExpenseDialog(context, provider, moneyProvider);
     }
   }
 
-  void _showAddItemDialog(BuildContext context, IndiaTrackerProvider provider) {
-    final nameController = TextEditingController();
-    final qtyController = TextEditingController();
-    final inrController = TextEditingController();
-    String selectedCategory = 'Clothes';
+  void _showAddItemDialog(
+    BuildContext context,
+    IndiaTrackerProvider provider,
+    MoneyProvider moneyProvider, {
+    IndiaItem? item,
+  }) {
+    // ... same as before but using moneyProvider for rate
+    final nameController = TextEditingController(text: item?.name);
+    final qtyController = TextEditingController(
+      text: item?.quantity.toString(),
+    );
+    final inrController = TextEditingController(
+      text: item?.valueInr.toStringAsFixed(0),
+    );
+    String selectedCategory = item?.category ?? 'Clothes';
 
     showModalBottomSheet(
       context: context,
@@ -409,7 +559,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Add India Item',
+                item == null ? 'Add India Item' : 'Update India Item',
                 style: GoogleFonts.outfit(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
@@ -419,7 +569,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
-                  hintText: 'Item Name (e.g. Jeans)',
+                  hintText: 'Item Name',
                   labelText: 'Name',
                 ),
               ),
@@ -430,10 +580,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
                     child: TextField(
                       controller: qtyController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: 'Quantity',
-                        labelText: 'Qty',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Qty'),
                     ),
                   ),
                   SizedBox(width: 16.w),
@@ -442,7 +589,6 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
                       controller: inrController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        hintText: 'Value in ₹',
                         labelText: 'Value (INR)',
                       ),
                     ),
@@ -451,7 +597,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
               ),
               SizedBox(height: 16.h),
               DropdownButtonFormField<String>(
-                initialValue: selectedCategory,
+                value: selectedCategory,
                 items: ['Clothes', 'Food', 'Electronics', 'Gifts', 'Misc']
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),
@@ -466,20 +612,27 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
                   onPressed: () {
                     if (nameController.text.isNotEmpty) {
                       final inr = double.tryParse(inrController.text) ?? 0;
-                      provider.addItem(
-                        IndiaItem(
-                          id: const Uuid().v4(),
-                          name: nameController.text,
-                          category: selectedCategory,
-                          quantity: int.tryParse(qtyController.text) ?? 1,
-                          valueInr: inr,
-                          valueEur: inr / 90, // Simple conversion for mock
-                        ),
+                      final newItem = IndiaItem(
+                        id: item?.id ?? const Uuid().v4(),
+                        name: nameController.text,
+                        category: selectedCategory,
+                        quantity: int.tryParse(qtyController.text) ?? 1,
+                        valueInr: inr,
+                        valueEur: inr * moneyProvider.inrToEurRate,
+                        date: item?.date ?? DateTime.now(),
                       );
+
+                      if (item == null) {
+                        provider.addItem(newItem);
+                      } else {
+                        provider.updateItem(newItem);
+                      }
                       Navigator.pop(context);
                     }
                   },
-                  child: const Text('Add to Inventory'),
+                  child: Text(
+                    item == null ? 'Add to Inventory' : 'Update Item',
+                  ),
                 ),
               ),
               SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
@@ -493,10 +646,14 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
   void _showAddExpenseDialog(
     BuildContext context,
     IndiaTrackerProvider provider,
-  ) {
-    final titleController = TextEditingController();
-    final inrController = TextEditingController();
-    String selectedType = 'Flight';
+    MoneyProvider moneyProvider, {
+    IndiaTravelExpense? expense,
+  }) {
+    final titleController = TextEditingController(text: expense?.title);
+    final inrController = TextEditingController(
+      text: expense?.amountInr.toStringAsFixed(0),
+    );
+    String selectedType = expense?.type ?? 'Flight';
 
     showModalBottomSheet(
       context: context,
@@ -513,7 +670,7 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Add Travel Expense',
+                expense == null ? 'Add Travel Expense' : 'Update Expense',
                 style: GoogleFonts.outfit(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
@@ -531,19 +688,16 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
               TextField(
                 controller: inrController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  hintText: 'Amount in ₹',
-                  labelText: 'Amount (INR)',
-                ),
+                decoration: const InputDecoration(labelText: 'Amount (INR)'),
               ),
               SizedBox(height: 16.h),
               DropdownButtonFormField<String>(
-                initialValue: selectedType,
+                value: selectedType,
                 items: ['Flight', 'Visa', 'Insurance', 'Setup', 'Misc']
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),
                 onChanged: (v) => setState(() => selectedType = v!),
-                decoration: const InputDecoration(labelText: 'Expense Type'),
+                decoration: const InputDecoration(labelText: 'Type'),
               ),
               SizedBox(height: 32.h),
               SizedBox(
@@ -553,21 +707,27 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
                   onPressed: () {
                     if (titleController.text.isNotEmpty) {
                       final inr = double.tryParse(inrController.text) ?? 0;
-                      provider.addTravelExpense(
-                        IndiaTravelExpense(
-                          id: const Uuid().v4(),
-                          title: titleController.text,
-                          description: 'Added from app',
-                          amountInr: inr,
-                          amountEur: inr / 90,
-                          date: DateTime.now(),
-                          type: selectedType,
-                        ),
+                      final newExpense = IndiaTravelExpense(
+                        id: expense?.id ?? const Uuid().v4(),
+                        title: titleController.text,
+                        description: expense?.description ?? 'Added from app',
+                        amountInr: inr,
+                        amountEur: inr * moneyProvider.inrToEurRate,
+                        date: expense?.date ?? DateTime.now(),
+                        type: selectedType,
                       );
+
+                      if (expense == null) {
+                        provider.addTravelExpense(newExpense);
+                      } else {
+                        provider.updateTravelExpense(newExpense);
+                      }
                       Navigator.pop(context);
                     }
                   },
-                  child: const Text('Log Expense'),
+                  child: Text(
+                    expense == null ? 'Log Expense' : 'Update Expense',
+                  ),
                 ),
               ),
               SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
@@ -576,5 +736,142 @@ class _IndiaTrackerScreenState extends State<IndiaTrackerScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildCurrencySelector(BuildContext context, MoneyProvider provider) {
+    return PopupMenuButton<String>(
+      icon: Container(
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: AppColors.secondary.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              provider.selectedCurrency,
+              style: GoogleFonts.jetBrainsMono(
+                fontWeight: FontWeight.bold,
+                color: AppColors.secondary,
+                fontSize: 12.sp,
+              ),
+            ),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.secondary,
+              size: 16.sp,
+            ),
+          ],
+        ),
+      ),
+      onSelected: (String code) => provider.setSelectedCurrency(code),
+      itemBuilder: (BuildContext context) {
+        return provider.supportedCurrencies.map((String code) {
+          return PopupMenuItem<String>(
+            value: code,
+            child: Row(
+              children: [
+                Text(
+                  provider.getCurrencySymbol(code),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 12.w),
+                Text(code, style: GoogleFonts.inter()),
+              ],
+            ),
+          );
+        }).toList();
+      },
+    );
+  }
+
+  Widget _buildReadinessProgress(
+    BuildContext context,
+    IndiaTrackerProvider provider,
+  ) {
+    final progress = provider.readinessScore;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 8.h),
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : Colors.black.withOpacity(0.04),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Migration Readiness'.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    '${(progress * 100).toInt()}% Prepared',
+                    style: GoogleFonts.outfit(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+              Icon(
+                    progress >= 1.0
+                        ? Icons.verified_rounded
+                        : Icons.rocket_launch_outlined,
+                    color: progress >= 1.0
+                        ? AppColors.success
+                        : AppColors.secondary,
+                    size: 28.sp,
+                  )
+                  .animate(
+                    onPlay: (controller) => controller.repeat(reverse: true),
+                  )
+                  .scale(
+                    duration: 2.seconds,
+                    begin: const Offset(1, 1),
+                    end: const Offset(1.1, 1.1),
+                  ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10.r),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 10.h,
+              backgroundColor: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.black.withOpacity(0.05),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress >= 0.8 ? AppColors.success : AppColors.secondary,
+              ),
+            ),
+          ).animate().shimmer(
+            duration: 2.seconds,
+            color: Colors.white.withOpacity(0.2),
+          ),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: -0.2, end: 0);
   }
 }

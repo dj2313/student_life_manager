@@ -6,6 +6,7 @@ class Expense {
   late String description;
   late String currency;
   String? notes;
+  bool isBlockedAccount;
 
   Expense({
     required this.id,
@@ -15,6 +16,7 @@ class Expense {
     required this.description,
     this.currency = '€',
     this.notes,
+    this.isBlockedAccount = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -26,18 +28,20 @@ class Expense {
       'description': description,
       'currency': currency,
       'notes': notes,
+      'isBlockedAccount': isBlockedAccount,
     };
   }
 
   factory Expense.fromJson(Map<String, dynamic> json) {
     return Expense(
-      id: json['id'],
-      amount: json['amount'],
-      category: json['category'],
-      date: DateTime.parse(json['date']),
-      description: json['description'],
+      id: json['id'] ?? '',
+      amount: (json['amount'] ?? 0.0).toDouble(),
+      category: json['category'] ?? 'Misc',
+      date: DateTime.parse(json['date'] ?? DateTime.now().toIso8601String()),
+      description: json['description'] ?? '',
       currency: json['currency'] ?? '€',
       notes: json['notes'],
+      isBlockedAccount: json['isBlockedAccount'] ?? false,
     );
   }
 }

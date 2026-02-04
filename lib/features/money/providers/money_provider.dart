@@ -44,6 +44,12 @@ class MoneyProvider with ChangeNotifier {
   DateTime? get lastRateUpdate => _currencyService.lastUpdated;
   bool get isRatesStale => _currencyService.isStale;
 
+  // Blocked Account Planning (standard value for 2024/25)
+  double get monthlyBlockedPayout => 934.0;
+  int get monthsRemaining =>
+      (blockedAccountBalance / monthlyBlockedPayout).floor();
+  double get blockedAccountTotalYearly => 11208.00;
+
   String get _uid => _auth.currentUser?.uid ?? 'guest_user';
 
   MoneyProvider() {
@@ -67,7 +73,6 @@ class MoneyProvider with ChangeNotifier {
       ]);
     } catch (e) {
       debugPrint('MoneyProvider Initialization Error: $e');
-      _loadMockData();
     }
   }
 
@@ -224,16 +229,8 @@ class MoneyProvider with ChangeNotifier {
   /// Get list of supported currencies
   List<String> get supportedCurrencies => _currencyService.supportedCurrencies;
 
-  void _loadMockData() {
-    _expenses = [
-      Expense(
-        id: '1',
-        description: 'Rent',
-        amount: 450.00,
-        date: DateTime.now().subtract(const Duration(days: 5)),
-        category: 'Housing',
-      ),
-    ];
+  void _loadEmptyData() {
+    _expenses = [];
     notifyListeners();
   }
 
@@ -247,10 +244,81 @@ class MoneyProvider with ChangeNotifier {
           .set(expense.toJson());
 
       _expenses.insert(0, expense);
-      _totalBalance -= expense.amount;
-      await updateBalances(personal: _totalBalance);
+      _expenses.sort((a, b) => b.date.compareTo(a.date));
+
+      if (expense.isBlockedAccount) {
+        _blockedAccountBalance -= expense.amount;
+        await updateBalances(blocked: _blockedAccountBalance);
+      } else {
+        _totalBalance -= expense.amount;
+        await updateBalances(personal: _totalBalance);
+      }
     } catch (e) {
       debugPrint('Error adding expense: $e');
+    }
+  }
+
+  Future<void> updateExpense(Expense expense) async {
+    try {
+      final oldIndex = _expenses.indexWhere((e) => e.id == expense.id);
+      if (oldIndex != -1) {
+        final oldExpense = _expenses[oldIndex];
+
+        // Revert old balance effect
+        if (oldExpense.isBlockedAccount) {
+          _blockedAccountBalance += oldExpense.amount;
+        } else {
+          _totalBalance += oldExpense.amount;
+        }
+
+        // Apply new balance effect
+        if (expense.isBlockedAccount) {
+          _blockedAccountBalance -= expense.amount;
+        } else {
+          _totalBalance -= expense.amount;
+        }
+
+        await _firestore
+            .collection('users')
+            .doc(_uid)
+            .collection('expenses')
+            .doc(expense.id)
+            .update(expense.toJson());
+
+        _expenses[oldIndex] = expense;
+        _expenses.sort((a, b) => b.date.compareTo(a.date));
+        await updateBalances(
+          personal: _totalBalance,
+          blocked: _blockedAccountBalance,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error updating expense: $e');
+    }
+  }
+
+  Future<void> deleteExpense(Expense expense) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('expenses')
+          .doc(expense.id)
+          .delete();
+
+      _expenses.removeWhere((e) => e.id == expense.id);
+
+      if (expense.isBlockedAccount) {
+        _blockedAccountBalance += expense.amount;
+      } else {
+        _totalBalance += expense.amount;
+      }
+      await updateBalances(
+        personal: _totalBalance,
+        blocked: _blockedAccountBalance,
+      );
+    } catch (e) {
+      debugPrint('Error deleting expense: $e');
     }
   }
 

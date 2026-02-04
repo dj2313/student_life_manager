@@ -1247,40 +1247,49 @@ class _HomeDashboardState extends State<HomeDashboard> {
         SizedBox(width: 16.w),
         // Daily Budget Widget
         Expanded(
-          child: Container(
-            padding: EdgeInsets.all(20.w),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(
-                color: Theme.of(context).dividerColor.withOpacity(0.05),
+          child: GestureDetector(
+            onTap: () {
+              context.hapticClick();
+              Provider.of<NavigationProvider>(
+                context,
+                listen: false,
+              ).setIndex(2);
+            },
+            child: Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(24.r),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor.withOpacity(0.05),
+                ),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.account_balance_wallet_outlined,
-                  color: AppColors.success,
-                  size: 20.sp,
-                ),
-                SizedBox(height: 12.h),
-                Text(
-                  '€${(25.0 - (moneyProvider.getMonthlySpending() / 30)).toStringAsFixed(2)}',
-                  style: GoogleFonts.outfit(
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: AppColors.success,
+                    size: 20.sp,
                   ),
-                ),
-                Text(
-                  'Daily Budget',
-                  style: GoogleFonts.inter(
-                    fontSize: 11.sp,
-                    color: context.textSecondary,
+                  SizedBox(height: 12.h),
+                  Text(
+                    '€${(25.0 - (moneyProvider.getMonthlySpending() / 30)).toStringAsFixed(2)}',
+                    style: GoogleFonts.outfit(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
-                ),
-              ],
+                  Text(
+                    'Daily Budget',
+                    style: GoogleFonts.inter(
+                      fontSize: 11.sp,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

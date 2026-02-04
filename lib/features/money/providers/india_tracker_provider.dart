@@ -38,6 +38,7 @@ class IndiaTrackerProvider with ChangeNotifier {
         data['id'] = doc.id;
         return IndiaItem.fromJson(data);
       }).toList();
+      _items.sort((a, b) => b.date.compareTo(a.date));
 
       // Fetch Travel Expenses
       final expensesSnapshot = await _firestore
@@ -52,76 +53,12 @@ class IndiaTrackerProvider with ChangeNotifier {
         data['id'] = doc.id;
         return IndiaTravelExpense.fromJson(data);
       }).toList();
-
-      if (_items.isEmpty && _travelExpenses.isEmpty) {
-        _loadMockData();
-      }
     } catch (e) {
       debugPrint('Error fetching India tracker data: $e');
-      _loadMockData();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  void _loadMockData() {
-    _items = [
-      IndiaItem(
-        id: '1',
-        name: 'Jeans',
-        category: 'Clothes',
-        quantity: 3,
-        valueInr: 3000,
-        valueEur: 33,
-      ),
-      IndiaItem(
-        id: '2',
-        name: 'Shirts',
-        category: 'Clothes',
-        quantity: 5,
-        valueInr: 2500,
-        valueEur: 28,
-      ),
-      IndiaItem(
-        id: '3',
-        name: 'Masalas & Spices',
-        category: 'Food',
-        quantity: 1,
-        valueInr: 1500,
-        valueEur: 17,
-      ),
-      IndiaItem(
-        id: '4',
-        name: 'Laptop bag',
-        category: 'Electronics',
-        quantity: 1,
-        valueInr: 2000,
-        valueEur: 22,
-      ),
-    ];
-
-    _travelExpenses = [
-      IndiaTravelExpense(
-        id: 'e1',
-        title: 'Air India Flight',
-        description: 'New Delhi to Berlin via Frankfurt',
-        amountInr: 65000,
-        amountEur: 720,
-        date: DateTime.now().subtract(const Duration(days: 15)),
-        type: 'Flight',
-      ),
-      IndiaTravelExpense(
-        id: 'e2',
-        title: 'Visa Application',
-        description: 'VFS Global National Visa',
-        amountInr: 8000,
-        amountEur: 90,
-        date: DateTime.now().subtract(const Duration(days: 45)),
-        type: 'Visa',
-      ),
-    ];
-    notifyListeners();
   }
 
   Future<void> addItem(IndiaItem item) async {
@@ -133,9 +70,30 @@ class IndiaTrackerProvider with ChangeNotifier {
           .doc(item.id)
           .set(item.toJson());
       _items.insert(0, item);
+      _items.sort((a, b) => b.date.compareTo(a.date));
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding India item: $e');
+    }
+  }
+
+  Future<void> updateItem(IndiaItem item) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('india_items')
+          .doc(item.id)
+          .update(item.toJson());
+
+      final index = _items.indexWhere((i) => i.id == item.id);
+      if (index != -1) {
+        _items[index] = item;
+        _items.sort((a, b) => b.date.compareTo(a.date));
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error updating India item: $e');
     }
   }
 
@@ -163,9 +121,45 @@ class IndiaTrackerProvider with ChangeNotifier {
           .doc(expense.id)
           .set(expense.toJson());
       _travelExpenses.insert(0, expense);
+      _travelExpenses.sort((a, b) => b.date.compareTo(a.date));
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding travel expense: $e');
+    }
+  }
+
+  Future<void> updateTravelExpense(IndiaTravelExpense expense) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('india_travel_expenses')
+          .doc(expense.id)
+          .update(expense.toJson());
+
+      final index = _travelExpenses.indexWhere((e) => e.id == expense.id);
+      if (index != -1) {
+        _travelExpenses[index] = expense;
+        _travelExpenses.sort((a, b) => b.date.compareTo(a.date));
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error updating travel expense: $e');
+    }
+  }
+
+  Future<void> deleteTravelExpense(String id) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('india_travel_expenses')
+          .doc(id)
+          .delete();
+      _travelExpenses.removeWhere((exp) => exp.id == id);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error deleting travel expense: $e');
     }
   }
 
@@ -173,4 +167,27 @@ class IndiaTrackerProvider with ChangeNotifier {
       _items.fold(0, (sum, item) => sum + item.valueEur);
   double get totalTravelExpenseEur =>
       _travelExpenses.fold(0, (sum, exp) => sum + exp.amountEur);
+
+  double get readinessScore {
+    double score = 0;
+    // 60% for Travel Essentials (20% each)
+    final essentialTypes = ['Flight', 'Visa', 'Insurance'];
+    for (final type in essentialTypes) {
+      if (_travelExpenses.any(
+        (e) => e.type.toLowerCase() == type.toLowerCase(),
+      )) {
+        score += 0.20;
+      }
+    }
+
+    // 40% for Inventory Prep (13.3% each for major categories)
+    final majorCategories = ['Clothes', 'Food', 'Electronics'];
+    for (final cat in majorCategories) {
+      if (_items.any((i) => i.category.toLowerCase() == cat.toLowerCase())) {
+        score += 0.133;
+      }
+    }
+
+    return score.clamp(0.0, 1.0);
+  }
 }

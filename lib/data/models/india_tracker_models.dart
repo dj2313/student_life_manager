@@ -5,6 +5,7 @@ class IndiaItem {
   final int quantity;
   final double valueInr;
   final double valueEur;
+  final DateTime date;
 
   IndiaItem({
     required this.id,
@@ -13,6 +14,7 @@ class IndiaItem {
     required this.quantity,
     required this.valueInr,
     required this.valueEur,
+    required this.date,
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +25,7 @@ class IndiaItem {
       'quantity': quantity,
       'valueInr': valueInr,
       'valueEur': valueEur,
+      'date': date.toIso8601String(),
     };
   }
 
@@ -31,9 +34,12 @@ class IndiaItem {
       id: json['id'],
       name: json['name'],
       category: json['category'],
-      quantity: json['quantity'],
+      quantity: json['quantity'] ?? 1,
       valueInr: (json['valueInr'] as num).toDouble(),
       valueEur: (json['valueEur'] as num).toDouble(),
+      date: json['date'] != null
+          ? DateTime.parse(json['date'])
+          : DateTime.now(),
     );
   }
 }
