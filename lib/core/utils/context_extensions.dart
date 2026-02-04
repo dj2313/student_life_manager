@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import 'package:flutter/services.dart';
 
 extension ContextExtensions on BuildContext {
   bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
@@ -20,4 +21,8 @@ extension ContextExtensions on BuildContext {
 
   Color get primaryColor => Theme.of(this).colorScheme.primary;
   Color get secondaryColor => Theme.of(this).colorScheme.secondary;
+
+  void hapticClick() => HapticFeedback.lightImpact();
+  void hapticSuccess() => HapticFeedback.mediumImpact();
+  void hapticError() => HapticFeedback.heavyImpact();
 }

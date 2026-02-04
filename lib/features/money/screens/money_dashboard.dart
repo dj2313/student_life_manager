@@ -13,6 +13,10 @@ import 'india_tracker_screen.dart';
 import 'loan_screen.dart';
 import 'groceries_screen.dart';
 import '../widgets/live_currency_converter.dart';
+import '../providers/job_provider.dart';
+
+import './job_tracker_screen.dart';
+import '../../../core/utils/context_extensions.dart';
 
 class MoneyDashboard extends StatefulWidget {
   const MoneyDashboard({super.key});
@@ -49,6 +53,9 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                         SizedBox(height: 40.h),
                         _buildSpendingAnalytics(context, moneyProvider),
                         SizedBox(height: 40.h),
+                        _buildJobTrackerSection(context),
+                        SizedBox(height: 40.h),
+
                         _buildAccountsSection(context, moneyProvider),
                         SizedBox(height: 40.h),
                         _buildTransactionsSection(context, moneyProvider),
@@ -66,27 +73,26 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
-    final textColor = Theme.of(context).colorScheme.primary;
     return SliverAppBar(
-      expandedHeight: 40.h,
+      expandedHeight: 60.h,
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
       title: Text(
-        'Portfolio',
+        'FINANCIAL PORTFOLIO',
         style: GoogleFonts.outfit(
           fontSize: 16.sp,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-          letterSpacing: 1.2,
+          fontWeight: FontWeight.w800,
+          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 2.0,
         ),
       ),
       actions: [
         IconButton(
           icon: Icon(
-            Icons.notifications_none_outlined,
-            color: textColor,
-            size: 24.sp,
+            Icons.tune_rounded,
+            color: Theme.of(context).colorScheme.primary,
+            size: 22.sp,
           ),
           onPressed: () {},
         ),
@@ -99,6 +105,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     BuildContext context,
     MoneyProvider provider,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final spending = provider.getMonthlySpending();
     const budget = 600.0;
     final ratio = spending / budget;
@@ -107,11 +114,16 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(32.r),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.08),
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(28.r),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1.5),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+        ],
       ),
       child: Column(
         children: [
@@ -124,72 +136,100 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'TOTAL LIQUIDITY',
+                      'TOTAL LIQUID ASSETS',
                       style: GoogleFonts.inter(
                         fontSize: 10.sp,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textTertiaryLight,
-                        letterSpacing: 1.2,
+                        color: isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textTertiaryLight,
+                        letterSpacing: 1.5,
                       ),
                     ),
-                    SizedBox(height: 4.h),
+                    SizedBox(height: 8.h),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          '€',
-                          style: GoogleFonts.outfit(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.secondary,
+                        Padding(
+                          padding: EdgeInsets.only(bottom: 6.h),
+                          child: Text(
+                            '€',
+                            style: GoogleFonts.outfit(
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.secondary,
+                            ),
                           ),
                         ),
-                        SizedBox(width: 4.w),
+                        SizedBox(width: 6.w),
                         Text(
                           provider.totalBalance.toStringAsFixed(2),
                           style: GoogleFonts.outfit(
-                            fontSize: 32.sp,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 38.sp,
+                            fontWeight: FontWeight.w800,
                             color: Theme.of(context).colorScheme.primary,
+                            letterSpacing: -1,
                           ),
                         ),
                       ],
                     ),
                   ],
                 ),
-                _buildBudgetMiniCircle(ratio),
+                _buildBudgetMiniCircle(ratio, isDark),
               ],
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 18.h),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.03),
+              color: isDark
+                  ? Colors.white.withOpacity(0.02)
+                  : AppColors.surfaceLight,
               borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(32.r),
+                bottom: Radius.circular(28.r),
               ),
             ),
             child: Row(
               children: [
                 _buildCompactStat(
-                  'Personal',
+                  'SAVINGS',
                   '€${provider.totalBalance.toStringAsFixed(0)}',
                   AppColors.primary,
+                  isDark,
                 ),
-                SizedBox(width: 24.w),
+                SizedBox(width: 32.w),
                 _buildCompactStat(
-                  'Blocked',
+                  'BLOCKED',
                   '€${provider.blockedAccountBalance.toStringAsFixed(0)}',
                   AppColors.secondary,
+                  isDark,
                 ),
                 const Spacer(),
-                Text(
-                  'Budget: €${spending.toInt()}/$budget',
-                  style: GoogleFonts.inter(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondaryLight,
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 6.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.03)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.black.withOpacity(0.03),
+                    ),
+                  ),
+                  child: Text(
+                    '${(ratio * 100).toInt()}% BUDGETED',
+                    style: GoogleFonts.inter(
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w800,
+                      color: ratio > 0.9
+                          ? AppColors.error
+                          : AppColors.textSecondaryLight,
+                    ),
                   ),
                 ),
               ],
@@ -200,32 +240,45 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     );
   }
 
-  Widget _buildBudgetMiniCircle(double ratio) {
+  Widget _buildBudgetMiniCircle(double ratio, bool isDark) {
+    final statusColor = ratio > 0.9 ? AppColors.error : AppColors.accent;
     return SizedBox(
-      width: 48.w,
-      height: 48.w,
+      width: 52.w,
+      height: 52.w,
       child: Stack(
         alignment: Alignment.center,
         children: [
           CircularProgressIndicator(
+            value: 1.0,
+            strokeWidth: 5,
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.03),
+          ),
+          CircularProgressIndicator(
             value: ratio.clamp(0, 1),
-            strokeWidth: 4,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(
-              ratio > 0.9 ? AppColors.error : AppColors.success,
-            ),
+            strokeWidth: 5,
+            strokeCap: StrokeCap.round,
+            valueColor: AlwaysStoppedAnimation<Color>(statusColor),
           ),
           Icon(
-            ratio > 0.9 ? Icons.warning_rounded : Icons.bolt_rounded,
-            size: 16.sp,
-            color: ratio > 0.9 ? AppColors.error : AppColors.success,
+            ratio > 0.9
+                ? Icons.warning_amber_rounded
+                : Icons.account_balance_rounded,
+            size: 20.sp,
+            color: statusColor.withOpacity(0.6),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCompactStat(String label, String value, Color color) {
+  Widget _buildCompactStat(
+    String label,
+    String value,
+    Color color,
+    bool isDark,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -233,15 +286,19 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
           label,
           style: GoogleFonts.inter(
             fontSize: 9.sp,
-            color: AppColors.textSecondaryLight,
-            fontWeight: FontWeight.w600,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
           ),
         ),
         Text(
           value,
           style: GoogleFonts.outfit(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.bold,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w800,
+            color: isDark ? Colors.white : AppColors.primary,
           ),
         ),
       ],
@@ -249,29 +306,33 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
   }
 
   Widget _buildQuickActionChips(BuildContext context, MoneyProvider provider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         _buildActionChip(
           context,
-          Icons.add_rounded,
-          'Expense',
+          Icons.add_task_rounded,
+          'EXPENSE',
           AppColors.primary,
+          isDark,
           () => _showAddExpenseDialog(context, provider),
         ),
         SizedBox(width: 12.w),
         _buildActionChip(
           context,
-          Icons.currency_exchange_rounded,
-          'Rates',
+          Icons.auto_awesome_motion_rounded,
+          'RATES',
           AppColors.secondary,
+          isDark,
           () => _showCurrencyRatesSheet(context),
         ),
         SizedBox(width: 12.w),
         _buildActionChip(
           context,
-          Icons.shopping_cart_outlined,
-          'Grocery',
-          AppColors.success,
+          Icons.inventory_2_outlined,
+          'ITEMS',
+          AppColors.accent,
+          isDark,
           () => Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const GroceriesScreen()),
@@ -280,9 +341,10 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
         SizedBox(width: 12.w),
         _buildActionChip(
           context,
-          Icons.handshake_outlined,
-          'Loans',
-          AppColors.accent,
+          Icons.assured_workload_outlined,
+          'LOANS',
+          AppColors.success,
+          isDark,
           () => Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const LoanScreen()),
@@ -297,33 +359,49 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     IconData icon,
     String label,
     Color color,
+    bool isDark,
     VoidCallback onTap, {
     bool isActive = false,
   }) {
     return Expanded(
       child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(vertical: 12.h),
+        onTap: () {
+          context.hapticClick();
+          onTap();
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 14.h),
           decoration: BoxDecoration(
-            color: isActive ? color : color.withOpacity(0.05),
+            color: isActive
+                ? color
+                : (isDark ? Colors.white.withOpacity(0.02) : Colors.white),
             borderRadius: BorderRadius.circular(16.r),
             border: Border.all(
-              color: isActive ? color : color.withOpacity(0.1),
+              color: isActive
+                  ? color
+                  : (isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : Colors.black.withOpacity(0.04)),
               width: 1.5,
             ),
           ),
           child: Column(
             children: [
-              Icon(icon, color: isActive ? Colors.white : color, size: 22.sp),
-              SizedBox(height: 6.h),
+              Icon(
+                icon,
+                color: isActive ? Colors.white : color.withOpacity(0.8),
+                size: 20.sp,
+              ),
+              SizedBox(height: 8.h),
               Text(
                 label,
                 style: GoogleFonts.inter(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
-                  color: isActive ? Colors.white : color,
+                  fontSize: 9.sp,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                  color: isActive
+                      ? Colors.white
+                      : (isDark ? Colors.white38 : Colors.black38),
                 ),
               ),
             ],
@@ -365,6 +443,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
   }
 
   Widget _buildAccountsSection(BuildContext context, MoneyProvider provider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -372,20 +451,28 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Sub-Accounts',
-              style: GoogleFonts.outfit(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
+              'MANAGED ACCOUNTS',
+              style: GoogleFonts.inter(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
               ),
             ),
-            TextButton.icon(
+            TextButton(
               onPressed: () => _showUpdateSheet(context, provider),
-              icon: const Icon(Icons.edit_note_rounded, size: 20),
-              label: const Text('Manage'),
+              child: Text(
+                'EDIT PORTFOLIO',
+                style: GoogleFonts.inter(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.secondary,
+                ),
+              ),
             ),
           ],
         ),
-        SizedBox(height: 16.h),
+        SizedBox(height: 12.h),
         _buildMiniAccountTile(
           context,
           'Blocked Account',
@@ -397,7 +484,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
         SizedBox(height: 12.h),
         _buildMiniAccountTile(
           context,
-          'Personal Account',
+          'Personal Savings',
           '€${provider.totalBalance.toStringAsFixed(2)}',
           Icons.wallet_outlined,
           AppColors.secondary,
@@ -415,22 +502,27 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     Color color,
     VoidCallback onTap,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(20.r),
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
+          color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
           borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.035),
+            width: 1.5,
+          ),
         ),
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(10.w),
+              padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12.r),
+                borderRadius: BorderRadius.circular(14.r),
               ),
               child: Icon(icon, color: color, size: 20.sp),
             ),
@@ -443,35 +535,28 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                     title,
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : AppColors.primary,
                     ),
                   ),
+                  SizedBox(height: 2.h),
                   Text(
-                    'Active Balance',
+                    'Active Portfolio Balance',
                     style: GoogleFonts.inter(
                       fontSize: 11.sp,
-                      color: AppColors.textSecondaryLight,
+                      color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
                     ),
                   ),
                 ],
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  amount,
-                  style: GoogleFonts.outfit(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Icon(
-                  Icons.keyboard_arrow_right_rounded,
-                  size: 16.sp,
-                  color: AppColors.textTertiaryLight,
-                ),
-              ],
+            Text(
+              amount,
+              style: GoogleFonts.outfit(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : AppColors.primary,
+              ),
             ),
           ],
         ),
@@ -761,6 +846,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
   Widget _buildSpendingAnalytics(BuildContext context, MoneyProvider provider) {
     final categoryData = provider.getCategorySpending();
     final total = categoryData.values.fold(0.0, (sum, item) => sum + item);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -786,7 +872,9 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
           ),
           child: Column(
             children: categoryData.entries.map((entry) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
               final ratio = total > 0 ? entry.value / total : 0.0;
+              final categoryColor = _getCategoryColor(entry.key);
               return Padding(
                 padding: EdgeInsets.only(bottom: 16.h),
                 child: Column(
@@ -797,41 +885,51 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                         Row(
                           children: [
                             Container(
-                              width: 8.w,
-                              height: 8.w,
-                              decoration: const BoxDecoration(
-                                color: AppColors.secondary,
+                              width: 10.w,
+                              height: 10.w,
+                              decoration: BoxDecoration(
+                                color: categoryColor,
                                 shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 1.5,
+                                ),
                               ),
                             ),
                             SizedBox(width: 12.w),
                             Text(
-                              entry.key,
+                              entry.key.toUpperCase(),
                               style: GoogleFonts.inter(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.8),
                               ),
                             ),
                           ],
                         ),
                         Text(
                           '€${entry.value.toStringAsFixed(0)}',
-                          style: GoogleFonts.jetBrainsMono(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.bold,
+                          style: GoogleFonts.outfit(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 8.h),
+                    SizedBox(height: 10.h),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4.r),
                       child: LinearProgressIndicator(
                         value: ratio,
-                        minHeight: 6.h,
-                        backgroundColor: AppColors.secondary.withOpacity(0.05),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppColors.secondary,
+                        minHeight: 4.h,
+                        backgroundColor: isDark
+                            ? Colors.white.withOpacity(0.03)
+                            : Colors.black.withOpacity(0.03),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          categoryColor,
                         ),
                       ),
                     ),
@@ -846,29 +944,38 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
   }
 
   Widget _buildIndiaTrackerCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const IndiaTrackerScreen()),
       ),
       child: Container(
-        padding: EdgeInsets.all(24.w),
+        padding: EdgeInsets.all(20.w),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
+          color: isDark
+              ? Colors.white.withOpacity(0.02)
+              : AppColors.surfaceLight,
           borderRadius: BorderRadius.circular(24.r),
-          border: Border.all(color: Theme.of(context).dividerColor, width: 1.2),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.04),
+            width: 1.5,
+          ),
         ),
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(12.w),
+              padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9966).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16.r),
+                color: AppColors.categoryIndia.withOpacity(0.15),
+                shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.flight_takeoff_rounded,
-                color: Color(0xFFFF9966),
+              child: Icon(
+                Icons.travel_explore_rounded,
+                color: AppColors.categoryIndia,
+                size: 24.sp,
               ),
             ),
             SizedBox(width: 20.w),
@@ -877,26 +984,30 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'India → Germany',
+                    'INDIA → GERMANY',
                     style: GoogleFonts.outfit(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: AppColors.categoryIndia,
                     ),
                   ),
+                  SizedBox(height: 2.h),
                   Text(
-                    'Inventory & Travel Logs',
+                    'Migration & Travel Logistics',
                     style: GoogleFonts.inter(
-                      fontSize: 12.sp,
-                      color: AppColors.textSecondaryLight,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : AppColors.primary,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textTertiaryLight,
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: AppColors.categoryIndia.withOpacity(0.5),
+              size: 16.sp,
             ),
           ],
         ),
@@ -908,6 +1019,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     BuildContext context,
     MoneyProvider provider,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -915,19 +1027,23 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Recent Transactions',
-              style: GoogleFonts.outfit(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
+              'RECENT SETTLEMENTS',
+              style: GoogleFonts.inter(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
               ),
             ),
-            Text(
-              'See All',
-              style: GoogleFonts.inter(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.secondary,
+            GestureDetector(
+              onTap: () {},
+              child: Text(
+                'LEDGER VIEW',
+                style: GoogleFonts.inter(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.secondary,
+                ),
               ),
             ),
           ],
@@ -935,39 +1051,49 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
         SizedBox(height: 16.h),
         if (provider.expenses.isEmpty)
           Center(
-            child: Text(
-              'No expenses recorded yet',
-              style: GoogleFonts.inter(color: AppColors.textSecondaryLight),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 20.h),
+              child: Text(
+                'No recorded transactions',
+                style: GoogleFonts.inter(
+                  fontSize: 13.sp,
+                  color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                ),
+              ),
             ),
           )
         else
-          ...provider.expenses
-              .take(5)
-              .map((expense) => _buildTransactionItem(context, expense)),
+          ...provider.expenses.take(5).map((expense) => _buildTransactionItem(context, expense)),
       ],
     );
   }
 
   Widget _buildTransactionItem(BuildContext context, Expense expense) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final categoryColor = _getCategoryColor(expense.category);
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        color: isDark ? Colors.white.withOpacity(0.015) : Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+          width: 1.2,
+        ),
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(12.w),
+            padding: EdgeInsets.all(10.w),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12.r),
+              color: categoryColor.withOpacity(0.12),
+              shape: BoxShape.circle,
             ),
             child: Icon(
               _getCategoryIcon(expense.category),
-              color: AppColors.primary,
+              color: categoryColor,
               size: 20.sp,
             ),
           ),
@@ -977,18 +1103,21 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  expense.description,
+                  expense.description.toUpperCase(),
                   style: GoogleFonts.inter(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                    color: isDark ? Colors.white : AppColors.primary,
                   ),
                 ),
+                SizedBox(height: 2.h),
                 Text(
-                  DateFormat('MMM dd, HH:mm').format(expense.date),
+                  DateFormat('MMM dd • HH:mm').format(expense.date),
                   style: GoogleFonts.inter(
                     fontSize: 11.sp,
-                    color: AppColors.textSecondaryLight,
+                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -997,9 +1126,10 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
           Text(
             '-€${expense.amount.toStringAsFixed(2)}',
             style: GoogleFonts.outfit(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.error,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w800,
+              color: isDark ? AppColors.error : AppColors.error,
+              letterSpacing: -0.5,
             ),
           ),
         ],
@@ -1007,20 +1137,184 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     );
   }
 
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'housing':
+        return AppColors.categoryTransport;
+      case 'food':
+        return AppColors.categoryGroceries;
+      case 'entertainment':
+        return AppColors.categoryElectronics;
+      case 'education':
+        return AppColors.primary;
+      case 'travel':
+        return AppColors.categoryIndia;
+      default:
+        return AppColors.categoryMisc;
+    }
+  }
+
   IconData _getCategoryIcon(String category) {
     switch (category.toLowerCase()) {
       case 'housing':
-        return Icons.home_outlined;
+        return Icons.roofing_rounded;
       case 'food':
-        return Icons.restaurant_rounded;
+        return Icons.local_dining_outlined;
       case 'entertainment':
-        return Icons.movie_filter_outlined;
+        return Icons.interests_outlined;
       case 'education':
         return Icons.school_outlined;
       case 'travel':
         return Icons.train_outlined;
       default:
-        return Icons.payment_rounded;
+        return Icons.all_out_rounded;
     }
+  }
+
+  Widget _buildJobTrackerSection(BuildContext context) {
+    return Consumer<JobProvider>(
+      builder: (context, provider, child) {
+        return Container(
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.05),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'WERKSTUDENT STATUS',
+                        style: GoogleFonts.inter(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                          color: AppColors.textTertiaryLight,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Employment Threshold',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  _buildCircularProgressIndicator(provider.usagePercentage),
+                ],
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    size: 14.sp,
+                    color: AppColors.accent,
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    '${provider.totalDaysWorked.toStringAsFixed(1)} / 140.0 Days Utilized',
+                    style: GoogleFonts.inter(
+                      fontSize: 13.sp,
+                      color: context.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24.h),
+              SizedBox(
+                width: double.infinity,
+                child: _buildNaturalButton(
+                  'Manage Work Hours',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const JobTrackerScreen(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCircularProgressIndicator(double progress) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      width: 44.w,
+      height: 44.w,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircularProgressIndicator(
+            value: 1.0,
+            strokeWidth: 4,
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.03),
+          ),
+          CircularProgressIndicator(
+            value: progress,
+            strokeWidth: 4,
+            strokeCap: StrokeCap.round,
+            valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+          ),
+          Text(
+            '${(progress * 100).toInt()}%',
+            style: GoogleFonts.inter(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNaturalButton(String label, VoidCallback onTap) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 14.h),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withOpacity(0.03)
+              : AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.04),
+          ),
+        ),
+        child: Text(
+          label.toUpperCase(),
+          style: GoogleFonts.inter(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            color: isDark ? Colors.white70 : AppColors.primary,
+          ),
+        ),
+      ),
+    );
   }
 }

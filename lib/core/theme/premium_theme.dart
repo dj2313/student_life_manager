@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants/app_colors.dart';
 
 class PremiumTheme {
@@ -11,13 +12,14 @@ class PremiumTheme {
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
-        surface: Colors.white,
+        surface: AppColors.cardLight,
         error: AppColors.error,
         onPrimary: Colors.white,
         onSurface: AppColors.textPrimaryLight,
+        outline: AppColors.borderLight,
       ),
       scaffoldBackgroundColor: AppColors.backgroundLight,
-      dividerColor: AppColors.borderLight,
+      dividerColor: AppColors.dividerLight,
 
       appBarTheme: AppBarTheme(
         elevation: 0,
@@ -25,9 +27,10 @@ class PremiumTheme {
         foregroundColor: AppColors.primary,
         centerTitle: true,
         titleTextStyle: GoogleFonts.outfit(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontSize: 20.sp,
+          fontWeight: FontWeight.w700,
           color: AppColors.primary,
+          letterSpacing: -0.5,
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -38,36 +41,41 @@ class PremiumTheme {
 
       cardTheme: CardThemeData(
         elevation: 0,
-        color: Colors.white,
+        color: AppColors.cardLight,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: AppColors.borderLight, width: 1),
+          borderRadius: BorderRadius.circular(24.r),
+          side: const BorderSide(color: AppColors.borderLight, width: 1.5),
         ),
       ),
 
       textTheme: TextTheme(
         displayLarge: GoogleFonts.outfit(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
+          fontSize: 34.sp,
+          fontWeight: FontWeight.w800,
           color: AppColors.primary,
+          letterSpacing: -1,
         ),
         headlineMedium: GoogleFonts.outfit(
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
+          fontSize: 26.sp,
+          fontWeight: FontWeight.w700,
           color: AppColors.primary,
+          letterSpacing: -0.5,
         ),
         titleLarge: GoogleFonts.inter(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontSize: 18.sp,
+          fontWeight: FontWeight.w700,
           color: AppColors.primary,
         ),
         bodyLarge: GoogleFonts.inter(
-          fontSize: 16,
+          fontSize: 16.sp,
           color: AppColors.textPrimaryLight,
+          height: 1.5,
         ),
         bodyMedium: GoogleFonts.inter(
-          fontSize: 14,
+          fontSize: 14.sp,
           color: AppColors.textPrimaryLight,
+          height: 1.5,
         ),
       ),
 
@@ -76,13 +84,14 @@ class PremiumTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 18.h),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           textStyle: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -94,26 +103,27 @@ class PremiumTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors
-            .textPrimaryDark, // Light color for primary text/icons in dark mode
+        primary: AppColors.textPrimaryDark,
         secondary: AppColors.secondary,
         surface: AppColors.cardDark,
         error: AppColors.error,
         onPrimary: AppColors.primaryDark,
         onSurface: AppColors.textPrimaryDark,
+        outline: AppColors.borderDark,
       ),
       scaffoldBackgroundColor: AppColors.backgroundDark,
-      dividerColor: Colors.white10,
+      dividerColor: AppColors.dividerDark,
 
       appBarTheme: AppBarTheme(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimaryDark,
         centerTitle: true,
         titleTextStyle: GoogleFonts.outfit(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+          fontSize: 20.sp,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimaryDark,
+          letterSpacing: -0.5,
         ),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -125,30 +135,41 @@ class PremiumTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         color: AppColors.cardDark,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: Colors.white10, width: 1),
+          borderRadius: BorderRadius.circular(24.r),
+          side: const BorderSide(color: AppColors.borderDark, width: 1.5),
         ),
       ),
 
       textTheme: TextTheme(
         displayLarge: GoogleFonts.outfit(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
+          fontSize: 34.sp,
+          fontWeight: FontWeight.w800,
+          color: AppColors.textPrimaryDark,
+          letterSpacing: -1,
         ),
         headlineMedium: GoogleFonts.outfit(
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+          fontSize: 26.sp,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimaryDark,
+          letterSpacing: -0.5,
         ),
         titleLarge: GoogleFonts.inter(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+          fontSize: 18.sp,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimaryDark,
         ),
-        bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.white),
-        bodyMedium: GoogleFonts.inter(fontSize: 14, color: Colors.white),
+        bodyLarge: GoogleFonts.inter(
+          fontSize: 16.sp,
+          color: AppColors.textPrimaryDark,
+          height: 1.5,
+        ),
+        bodyMedium: GoogleFonts.inter(
+          fontSize: 14.sp,
+          color: AppColors.textPrimaryDark,
+          height: 1.5,
+        ),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -156,13 +177,14 @@ class PremiumTheme {
           backgroundColor: AppColors.secondary,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 18.h),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           textStyle: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
         ),
       ),

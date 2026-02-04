@@ -15,6 +15,11 @@ import '../../../core/providers/theme_provider.dart';
 import '../../money/providers/money_provider.dart';
 import '../../study/providers/study_provider.dart';
 import '../../tasks/providers/tasks_provider.dart';
+import '../providers/bureaucracy_provider.dart';
+import './bureaucracy_tracker_screen.dart';
+import './housing_tracker_screen.dart';
+import '../providers/housing_provider.dart';
+import '../../../core/providers/focus_timer_provider.dart';
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({super.key});
@@ -29,7 +34,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer4<HomeProvider, ThemeProvider, MoneyProvider, StudyProvider>(
+    return Consumer5<
+      HomeProvider,
+      ThemeProvider,
+      MoneyProvider,
+      StudyProvider,
+      FocusTimerProvider
+    >(
       builder:
           (
             context,
@@ -37,6 +48,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             themeProvider,
             moneyProvider,
             studyProvider,
+            focusTimerProvider,
             child,
           ) {
             return Scaffold(
@@ -73,13 +85,26 @@ class _HomeDashboardState extends State<HomeDashboard> {
                           ),
                           SizedBox(height: 32.h),
 
+                          _buildSectionTitle(context, 'DAILY HELPERS'),
+                          SizedBox(height: 16.h),
+                          _buildInteractiveWidgets(
+                            context,
+                            focusTimerProvider,
+                            moneyProvider,
+                          ),
+                          SizedBox(height: 32.h),
+
                           // Improved Quick Access
                           _buildQuickAccessSection(context),
                           SizedBox(height: 40.h),
 
                           _buildSectionTitle(context, 'BUREAUCRACY TRACKER'),
                           SizedBox(height: 16.h),
-                          _buildBureaucracyChecklist(context, homeProvider),
+                          _buildBureaucracyQuickAccess(context),
+                          SizedBox(height: 32.h),
+                          _buildSectionTitle(context, 'HOUSING & SUBLETTING'),
+                          SizedBox(height: 16.h),
+                          _buildHousingQuickAccess(context),
                           SizedBox(height: 40.h),
 
                           _buildTicketsSection(context, homeProvider),
@@ -485,24 +510,30 @@ class _HomeDashboardState extends State<HomeDashboard> {
     return months[month - 1];
   }
 
-  // NEW: Enhanced Visa Card with Actions
   Widget _buildEnhancedVisaCard(BuildContext context, HomeProvider provider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final progress = (provider.visaDaysRemaining / 90).clamp(0.0, 1.0);
+    final statusColor = provider.visaDaysRemaining < 10
+        ? AppColors.error
+        : AppColors.secondary;
+
     return Container(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : Colors.black.withOpacity(0.05),
         ),
-        borderRadius: BorderRadius.circular(32.r),
         boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.4),
-            blurRadius: 25,
-            offset: const Offset(0, 12),
-            spreadRadius: -5,
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
         ],
       ),
       child: Column(
@@ -511,97 +542,108 @@ class _HomeDashboardState extends State<HomeDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.badge_outlined,
-                    color: Colors.white70,
-                    size: 16.sp,
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    'Residence Permit',
-                    style: GoogleFonts.inter(
-                      fontSize: 13.sp,
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              Text(
+                'RESIDENCE PERMIT',
+                style: GoogleFonts.outfit(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.2,
+                  color: isDark ? Colors.white38 : Colors.black38,
+                ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: AppColors.secondary.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(12.r),
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
-                  provider.visaStatus,
+                  provider.visaStatus.toUpperCase(),
                   style: GoogleFonts.inter(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondary,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w800,
+                    color: statusColor,
                   ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 18.h),
+          SizedBox(height: 24.h),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${provider.visaDaysRemaining}',
-                style: GoogleFonts.outfit(
-                  fontSize: 48.sp,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  height: 1,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${provider.visaDaysRemaining}',
+                      style: GoogleFonts.outfit(
+                        fontSize: 42.sp,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : AppColors.primary,
+                        height: 1,
+                      ),
+                    ),
+                    Text(
+                      'days until expiry',
+                      style: GoogleFonts.inter(
+                        fontSize: 13.sp,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(width: 8.w),
-              Padding(
-                padding: EdgeInsets.only(bottom: 6.h),
-                child: Text(
-                  'Days Left',
-                  style: GoogleFonts.inter(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
+              // Circular Progress Indicator for a modern look
+              SizedBox(
+                height: 56.r,
+                width: 56.r,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CircularProgressIndicator(
+                      value: 1.0,
+                      strokeWidth: 6,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.black.withOpacity(0.03),
+                    ),
+                    CircularProgressIndicator(
+                      value: progress,
+                      strokeWidth: 6,
+                      strokeCap: StrokeCap.round,
+                      color: statusColor,
+                    ),
+                    Center(
+                      child: Icon(
+                        Icons.verified_user_rounded,
+                        size: 20.r,
+                        color: statusColor.withOpacity(0.5),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16.h),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8.r),
-            child: LinearProgressIndicator(
-              value: provider.visaDaysRemaining / 90,
-              minHeight: 10.h,
-              backgroundColor: Colors.white.withOpacity(0.15),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.secondary,
-              ),
-            ),
-          ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 24.h),
           Row(
             children: [
               Expanded(
                 child: _buildVisaActionButton(
                   context,
-                  Icons.calendar_month_outlined,
-                  'Calendar',
-                  () {},
+                  Icons.edit_calendar_outlined,
+                  'Update Date',
+                  () => _showVisaUpdateDialog(context, provider),
                 ),
               ),
               SizedBox(width: 12.w),
               Expanded(
                 child: _buildVisaActionButton(
                   context,
-                  Icons.notifications_outlined,
-                  'Remind',
+                  Icons.description_outlined,
+                  'View Document',
                   () {},
                 ),
               ),
@@ -618,26 +660,38 @@ class _HomeDashboardState extends State<HomeDashboard> {
     String label,
     VoidCallback onTap,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12.r),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 10.h),
+        padding: EdgeInsets.symmetric(vertical: 12.h),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color: isDark
+              ? Colors.white.withOpacity(0.03)
+              : Colors.black.withOpacity(0.04),
           borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.02),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 16.sp),
-            SizedBox(width: 6.w),
+            Icon(
+              icon,
+              color: isDark ? Colors.white70 : Colors.black54,
+              size: 16.sp,
+            ),
+            SizedBox(width: 8.w),
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 13.sp,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: isDark ? Colors.white70 : Colors.black54,
               ),
             ),
           ],
@@ -646,7 +700,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
-  // NEW: Quick Stats Row
   Widget _buildQuickStatsRow(
     BuildContext context,
     MoneyProvider moneyProvider,
@@ -665,31 +718,31 @@ class _HomeDashboardState extends State<HomeDashboard> {
       children: [
         _buildStatCard(
           context,
-          '💰',
+          Icons.account_balance_wallet_outlined,
           '€${moneyProvider.totalBalance.toStringAsFixed(0)}',
           'Budget',
-          AppColors.success,
+          AppColors.primary,
         ),
         _buildStatCard(
           context,
-          '📚',
+          Icons.auto_stories_outlined,
           '${studyProvider.hoursLoggedThisWeek.toStringAsFixed(0)}h',
           'Study',
           AppColors.secondary,
         ),
         _buildStatCard(
           context,
-          '✅',
+          Icons.check_circle_outline_rounded,
           '$completedTasks/$totalTasks',
           'Tasks',
-          AppColors.accent,
+          AppColors.success,
         ),
         _buildStatCard(
           context,
-          '🎯',
+          Icons.analytics_outlined,
           '${totalTasks > 0 ? (completedTasks / totalTasks * 100).toStringAsFixed(0) : 0}%',
           'Score',
-          AppColors.primary,
+          Colors.blueGrey,
         ),
       ],
     );
@@ -697,44 +750,66 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   Widget _buildStatCard(
     BuildContext context,
-    String emoji,
+    IconData icon,
     String value,
     String label,
     Color color,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: 4.w),
         padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+          color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.05)
+                : Colors.black.withOpacity(0.04),
+          ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+          ],
         ),
         child: Column(
           children: [
-            Text(emoji, style: TextStyle(fontSize: 20.sp)),
-            SizedBox(height: 8.h),
+            Icon(icon, size: 20.sp, color: color.withOpacity(0.8)),
+            SizedBox(height: 12.h),
             Text(
               value,
               style: GoogleFonts.outfit(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w800,
-                color: color,
+                color: isDark ? Colors.white : AppColors.primary,
               ),
             ),
             SizedBox(height: 4.h),
             Text(
-              label,
+              label.toUpperCase(),
               style: GoogleFonts.inter(
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w600,
-                color: context.textTertiary,
+                fontSize: 9.sp,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: isDark ? Colors.white24 : Colors.black26,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showVisaUpdateDialog(BuildContext context, HomeProvider provider) {
+    // This is a placeholder for the actual dialog implementation
+    // In a real app, this would show a date picker
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Update Expiry Date feature coming soon!')),
     );
   }
 
@@ -862,83 +937,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
-  Widget _buildBureaucracyChecklist(
-    BuildContext context,
-    HomeProvider provider,
-  ) {
-    if (provider.bureaucracyTasks.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Container(
-      padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 8.h),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 1.2),
-      ),
-      child: Column(
-        children: provider.bureaucracyTasks.asMap().entries.map((entry) {
-          return InkWell(
-            onTap: () => provider.toggleBureaucracyTask(entry.key),
-            borderRadius: BorderRadius.circular(12.r),
-            child: _buildChecklistItem(context, entry.value),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildChecklistItem(BuildContext context, BureaucracyTask task) {
-    final textColor = Theme.of(context).colorScheme.primary;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: task.isCompleted
-                  ? AppColors.success.withOpacity(0.1)
-                  : AppColors.secondary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: Icon(
-              task.icon,
-              size: 18.sp,
-              color: task.isCompleted
-                  ? AppColors.success
-                  : AppColors.secondary.withOpacity(0.6),
-            ),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Text(
-              task.title,
-              style: GoogleFonts.inter(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w600,
-                color: textColor,
-                decoration: task.isCompleted
-                    ? TextDecoration.lineThrough
-                    : null,
-              ),
-            ),
-          ),
-          Icon(
-            task.isCompleted
-                ? Icons.check_circle_rounded
-                : Icons.radio_button_unchecked_rounded,
-            size: 20.sp,
-            color: task.isCompleted
-                ? AppColors.success
-                : AppColors.textTertiaryLight,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTicketsSection(BuildContext context, HomeProvider provider) {
     if (provider.activeTickets.isEmpty) {
       return const SizedBox.shrink();
@@ -1040,6 +1038,84 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
+  Widget _buildBureaucracyQuickAccess(BuildContext context) {
+    return Consumer<BureaucracyProvider>(
+      builder: (context, provider, child) {
+        return Container(
+          padding: EdgeInsets.all(20.w),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.05),
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Icon(
+                      Icons.account_balance_rounded,
+                      color: AppColors.primary,
+                      size: 24.sp,
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Administrative Roadmap',
+                          style: GoogleFonts.outfit(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${(provider.completionProgress * 100).toInt()}% of essential steps done',
+                          style: GoogleFonts.inter(
+                            fontSize: 12.sp,
+                            color: context.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BureaucracyTrackerScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.h),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10.r),
+                child: LinearProgressIndicator(
+                  value: provider.completionProgress,
+                  minHeight: 6.h,
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _showEditProfileDialog(BuildContext context, HomeProvider provider) {
     final controller = TextEditingController(text: provider.userName);
     showDialog(
@@ -1095,6 +1171,184 @@ class _HomeDashboardState extends State<HomeDashboard> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInteractiveWidgets(
+    BuildContext context,
+    FocusTimerProvider timerProvider,
+    MoneyProvider moneyProvider,
+  ) {
+    return Row(
+      children: [
+        // Focus Timer Widget
+        Expanded(
+          child: Container(
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(24.r),
+              border: Border.all(
+                color: timerProvider.isRunning
+                    ? AppColors.secondary.withOpacity(0.3)
+                    : Theme.of(context).dividerColor.withOpacity(0.05),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Icon(
+                      Icons.timer_outlined,
+                      color: AppColors.secondary,
+                      size: 20.sp,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        context.hapticClick();
+                        if (timerProvider.isRunning) {
+                          timerProvider.stopTimer();
+                        } else {
+                          timerProvider.startTimer();
+                        }
+                      },
+                      child: Icon(
+                        timerProvider.isRunning
+                            ? Icons.pause_circle_filled_rounded
+                            : Icons.play_circle_fill_rounded,
+                        color: AppColors.secondary,
+                        size: 28.sp,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  timerProvider.formattedTime,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                Text(
+                  'Focus Session',
+                  style: GoogleFonts.inter(
+                    fontSize: 11.sp,
+                    color: context.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(width: 16.w),
+        // Daily Budget Widget
+        Expanded(
+          child: Container(
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(24.r),
+              border: Border.all(
+                color: Theme.of(context).dividerColor.withOpacity(0.05),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: AppColors.success,
+                  size: 20.sp,
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  '€${(25.0 - (moneyProvider.getMonthlySpending() / 30)).toStringAsFixed(2)}',
+                  style: GoogleFonts.outfit(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                Text(
+                  'Daily Budget',
+                  style: GoogleFonts.inter(
+                    fontSize: 11.sp,
+                    color: context.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHousingQuickAccess(BuildContext context) {
+    return Consumer<HousingProvider>(
+      builder: (context, provider, child) {
+        return GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HousingTrackerScreen(),
+            ),
+          ),
+          child: Container(
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(24.r),
+              border: Border.all(
+                color: Theme.of(context).dividerColor.withOpacity(0.05),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: Icon(
+                    Icons.home_work_rounded,
+                    color: AppColors.secondary,
+                    size: 24.sp,
+                  ),
+                ),
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Housing Tracker',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${provider.applications.length} active applications',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          color: context.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

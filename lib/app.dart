@@ -13,6 +13,12 @@ import 'features/study/providers/study_provider.dart';
 import 'features/money/providers/india_tracker_provider.dart';
 import 'core/providers/navigation_provider.dart';
 import 'core/providers/theme_provider.dart';
+import 'core/providers/focus_timer_provider.dart';
+import 'features/study/providers/study_assistant_provider.dart';
+import 'features/home/providers/bureaucracy_provider.dart';
+import 'features/money/providers/job_provider.dart';
+import 'features/study/providers/gpa_provider.dart';
+import 'features/home/providers/housing_provider.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -31,7 +37,14 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => StudyProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(create: (_) => IndiaTrackerProvider()),
+        ChangeNotifierProvider(create: (_) => BureaucracyProvider()),
+        ChangeNotifierProvider(create: (_) => JobProvider()),
+        ChangeNotifierProvider(create: (_) => GPAProvider()),
+        ChangeNotifierProvider(create: (_) => HousingProvider()),
+        ChangeNotifierProvider(create: (_) => StudyAssistantProvider()),
+        ChangeNotifierProvider(create: (_) => FocusTimerProvider()),
       ],
+
       child: ScreenUtilInit(
         designSize: const Size(375, 812),
         minTextAdapt: true,

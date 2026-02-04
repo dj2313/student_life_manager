@@ -8,6 +8,10 @@ import '../../../data/models/lecture.dart';
 import 'german_learning_screen.dart';
 import 'uni_schedule_screen.dart';
 import 'add_university_screen.dart';
+import '../providers/gpa_provider.dart';
+import './gpa_manager_screen.dart';
+import './ai_assistant_screen.dart';
+import '../../../core/utils/context_extensions.dart';
 
 class StudyDashboard extends StatelessWidget {
   const StudyDashboard({super.key});
@@ -29,11 +33,17 @@ class StudyDashboard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildStudyStatus(context, studyProvider),
+                      SizedBox(height: 24.h),
+                      _buildGPAQuickAccess(context),
                       SizedBox(height: 32.h),
+
                       _buildSectionTitle(context, 'Active Preparation'),
                       SizedBox(height: 16.h),
                       _buildGermanFocusCard(context),
+                      SizedBox(height: 24.h),
+                      _buildAIQuickAccess(context),
                       SizedBox(height: 32.h),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -206,11 +216,13 @@ class StudyDashboard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
+        context.hapticClick();
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const GermanLearningScreen()),
         );
       },
+
       child: Container(
         padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
@@ -320,7 +332,11 @@ class StudyDashboard extends StatelessWidget {
     final textColor = Theme.of(context).colorScheme.primary;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        context.hapticClick();
+        onTap();
+      },
+
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 12.w),
         decoration: BoxDecoration(
@@ -413,6 +429,137 @@ class StudyDashboard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGPAQuickAccess(BuildContext context) {
+    return Consumer<GPAProvider>(
+      builder: (context, provider, child) {
+        return Container(
+          padding: EdgeInsets.all(20.w),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.05),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: Text(
+                  provider.currentGPA.toStringAsFixed(1),
+                  style: GoogleFonts.outfit(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Academic Progress',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${provider.totalCredits} ECTS earned so far',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.sp,
+                        color: context.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GPAManagerScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAIQuickAccess(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.hapticClick();
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AIStudyAssistantScreen(),
+          ),
+        );
+      },
+
+      child: Container(
+        padding: EdgeInsets.all(20.w),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(24.r),
+          border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.05),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                color: AppColors.accent,
+                size: 24.sp,
+              ),
+            ),
+            SizedBox(width: 16.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'AI Study Assistant',
+                    style: GoogleFonts.outfit(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Summarize notes & generate flashcards',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.sp,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+          ],
+        ),
       ),
     );
   }

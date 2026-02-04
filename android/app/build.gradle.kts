@@ -1,56 +1,46 @@
-import java.util.Properties // 1. Add this at the absolute top
-
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
     id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     id("kotlin-android")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-}
-
-// 2. Add this function right after the plugins block
-fun autoIncrementBuildNumber(): Int {
-    val versionPropsFile = file("version.properties")
-    val versionProps = Properties()
-    
-    if (versionPropsFile.exists()) {
-        versionProps.load(versionPropsFile.inputStream())
-    }
-    
-    val code = (versionProps["VERSION_CODE"]?.toString()?.toInt() ?: 0) + 1
-    versionProps["VERSION_CODE"] = code.toString()
-    versionProps.store(versionPropsFile.outputStream(), null)
-    return code
 }
 
 android {
     namespace = "com.example.student_life_manager"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
         isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     defaultConfig {
         applicationId = "com.example.student_life_manager"
-        minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        minSdk = 24
+        targetSdk = 36
         
-        // 3. CHANGE THESE TWO LINES:
-        versionCode = autoIncrementBuildNumber() 
-        versionName = "1.0.$versionCode" // This makes your version name 1.0.1, 1.0.2, etc. automatically
+        // Auto-increment version code based on timestamp
+        // This generates a unique version code for each build
+        val autoVersionCode = (System.currentTimeMillis() / 1000 / 60 / 60 / 24).toInt() // Days since epoch
+        versionCode = autoVersionCode
+        versionName = "1.0.$versionCode"
         
         multiDexEnabled = true
     }
 
     buildTypes {
         release {
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -62,4 +52,10 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.activity:activity:1.9.3")
+    }
 }

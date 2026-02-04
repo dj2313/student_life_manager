@@ -3,7 +3,6 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
 
 class NotificationService {
   static final NotificationService _notificationService =
@@ -47,10 +46,12 @@ class NotificationService {
 
     tz.initializeTimeZones();
     try {
-      final String timeZoneName = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timeZoneName));
+      // Use Asia/Kolkata for IST as requested by the user
+      tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+      debugPrint('Timezone set to Asia/Kolkata (IST)');
     } catch (e) {
       debugPrint('Error initializing timezone: $e');
+      tz.setLocalLocation(tz.getLocation('UTC'));
     }
 
     await flutterLocalNotificationsPlugin.initialize(
@@ -203,5 +204,63 @@ class NotificationService {
 
   Future<void> cancelAllNotifications() async {
     await flutterLocalNotificationsPlugin.cancelAll();
+  }
+
+  /// Schedule daily German Vocabulary reminder at 6:30 PM (18:30) IST
+  Future<void> scheduleDailyGermanVocab() async {
+    if (kIsWeb) return;
+
+    // Check permission before scheduling
+    if (!_permissionsGranted) {
+      await requestPermissions();
+    }
+
+    try {
+      final now = tz.TZDateTime.now(tz.local);
+      var scheduledDate = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day,
+        18, // 6 PM
+        30, // 30 minutes
+      );
+
+      // If it's already past 6:30 PM today, schedule for tomorrow
+      if (scheduledDate.isBefore(now)) {
+        scheduledDate = scheduledDate.add(const Duration(days: 1));
+      }
+
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        999, // Use a unique ID for this daily notification
+        '🇩🇪 German Vocab Time!',
+        'Time to master some new words! Open your Lexicon and practice.',
+        scheduledDate,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'german_vocab_channel',
+            'German Language Prep',
+            channelDescription: 'Daily reminders for German learning',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+      debugPrint(
+        'Scheduled Daily German Vocab at: ${scheduledDate.toString()}',
+      );
+    } catch (e) {
+      debugPrint('Error scheduling daily German vocab: $e');
+    }
   }
 }

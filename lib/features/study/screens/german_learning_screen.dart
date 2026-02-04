@@ -76,7 +76,10 @@ class GermanLearningScreen extends StatelessWidget {
       ),
       floatingActionButton: Consumer<StudyProvider>(
         builder: (context, provider, child) => FloatingActionButton.extended(
-          onPressed: () => _showAddSessionSheet(context, provider),
+          onPressed: () {
+            context.hapticClick();
+            _showAddSessionSheet(context, provider);
+          },
           label: const Text('New Session'),
           icon: const Icon(Icons.add),
           backgroundColor: AppColors.primary,
@@ -320,7 +323,11 @@ class GermanLearningScreen extends StatelessWidget {
         }
 
         return GestureDetector(
-          onTap: () => _showLevelStatusDialog(context, provider, level),
+          onTap: () {
+            context.hapticClick();
+            _showLevelStatusDialog(context, provider, level);
+          },
+
           child: Container(
             decoration: BoxDecoration(
               color: bgColor,

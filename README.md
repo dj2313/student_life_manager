@@ -1,16 +1,38 @@
-# student_life_manager
+# 🎓 Student Life Manager
 
-A new Flutter project.
+![App Logo](assets/images/app_logo.png)
 
-## Getting Started
+A premium, all-in-one companion for students to manage their academic life, finances, and daily tasks with intelligence and style.
 
-This project is a starting point for a Flutter application.
+## 🚀 Features
 
-A few resources to get you started if this is your first Flutter project:
+- **Money Management**: Track expenses, budgets, and savings.
+- **Study Planner**: Organize courses, study sessions, and grades.
+- **Task Tracker**: Stay on top of assignments and daily to-dos.
+- **Bureaucracy Tracker**: Manage important documents and appointments (especially for international students).
+- **German Learning**: Integrated tools for language progress.
+- **Premium UI/UX**: Minimalist, modern design with dark mode support.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 🛠️ Technology Stack
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Framework**: Flutter
+- **State Management**: Provider
+- **Database**: Hive & SQLite
+- **Charts**: FL Chart
+- **Theme**: Premium Custom Theme (Light/Dark)
+
+## 📦 Getting Started
+
+1. **Clone the repository**
+2. **Install dependencies**:
+   ```bash
+   flutter pub get
+   ```
+3. **Run the app**:
+   ```bash
+   flutter run
+   ```
+
+## 🎨 Branding
+
+The new logo represents the fusion of knowledge (the book), wisdom (the owl), and growth (the rising arrow). It follows a modern, minimalist aesthetic with a deep indigo and electric blue palette.
