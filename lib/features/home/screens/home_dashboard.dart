@@ -22,6 +22,8 @@ import '../providers/housing_provider.dart';
 import '../../../core/providers/focus_timer_provider.dart';
 import '../../../core/providers/weather_provider.dart';
 import './focus_zen_screen.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({super.key});
@@ -283,12 +285,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
     HomeProvider provider,
     WeatherProvider weatherProvider,
   ) {
-    // Proactively fetch weather if not loaded or city changed
-    if (weatherProvider.currentWeather == null && !weatherProvider.isLoading) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Proactively fetch weather if city changed or not loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!weatherProvider.isLoading) {
         weatherProvider.updateWeather(provider.locationName);
-      });
-    }
+      }
+    });
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -368,12 +370,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(24.r),
           border: Border.all(
-            color: Theme.of(context).dividerColor.withOpacity(0.05),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -391,7 +393,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     children: [
                       Icon(
                         greetingIcon,
-                        color: AppColors.secondary.withOpacity(0.8),
+                        color: AppColors.secondary.withValues(alpha: 0.8),
                         size: _isSummaryExpanded ? 22.sp : 18.sp,
                       ),
                       SizedBox(width: 12.w),
@@ -441,7 +443,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             if (_isSummaryExpanded) ...[
               Divider(
                 height: 1,
-                color: Theme.of(context).dividerColor.withOpacity(0.05),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
               ),
               Padding(
                 padding: EdgeInsets.all(20.w),
@@ -492,7 +494,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10.r),
           ),
           child: Icon(icon, color: color, size: 16.sp),
@@ -560,17 +562,17 @@ class _HomeDashboardState extends State<HomeDashboard> {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
         borderRadius: BorderRadius.circular(24.r),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : Colors.black.withOpacity(0.05),
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
         ),
         boxShadow: [
           if (!isDark)
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -594,7 +596,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
@@ -646,8 +648,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       value: 1.0,
                       strokeWidth: 6,
                       color: isDark
-                          ? Colors.white.withOpacity(0.05)
-                          : Colors.black.withOpacity(0.03),
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.03),
                     ),
                     CircularProgressIndicator(
                       value: progress,
@@ -659,7 +661,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       child: Icon(
                         Icons.verified_user_rounded,
                         size: 20.r,
-                        color: statusColor.withOpacity(0.5),
+                        color: statusColor.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -708,13 +710,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
         padding: EdgeInsets.symmetric(vertical: 12.h),
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.white.withOpacity(0.03)
-              : Colors.black.withOpacity(0.04),
+              ? Colors.white.withValues(alpha: 0.03)
+              : Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
             color: isDark
-                ? Colors.white.withOpacity(0.05)
-                : Colors.black.withOpacity(0.02),
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.02),
           ),
         ),
         child: Row(
@@ -801,17 +803,17 @@ class _HomeDashboardState extends State<HomeDashboard> {
         margin: EdgeInsets.symmetric(horizontal: 4.w),
         padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
+          color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.white,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
             color: isDark
-                ? Colors.white.withOpacity(0.05)
-                : Colors.black.withOpacity(0.04),
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.04),
           ),
           boxShadow: [
             if (!isDark)
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -819,7 +821,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         ),
         child: Column(
           children: [
-            Icon(icon, size: 20.sp, color: color.withOpacity(0.8)),
+            Icon(icon, size: 20.sp, color: color.withValues(alpha: 0.8)),
             SizedBox(height: 12.h),
             Text(
               value,
@@ -955,7 +957,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadow.withOpacity(0.04),
+                  color: AppColors.shadow.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -1036,7 +1038,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           Container(
             padding: EdgeInsets.all(14.w),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.12),
+              color: AppColors.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16.r),
             ),
             child: Icon(
@@ -1087,7 +1089,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(24.r),
             border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.05),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
             ),
           ),
           child: Column(
@@ -1097,7 +1099,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   Container(
                     padding: EdgeInsets.all(12.w),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: Icon(
@@ -1145,7 +1147,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 child: LinearProgressIndicator(
                   value: provider.completionProgress,
                   minHeight: 6.h,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   valueColor: const AlwaysStoppedAnimation(AppColors.primary),
                 ),
               ),
@@ -1191,30 +1193,148 @@ class _HomeDashboardState extends State<HomeDashboard> {
     WeatherProvider weatherProvider,
   ) {
     final controller = TextEditingController(text: provider.locationName);
-    showDialog(
+    bool isDetecting = false;
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Location'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'City, Country'),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Text(
+                'Update Location',
+                style: GoogleFonts.outfit(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                'Enter a city or use your current position',
+                style: GoogleFonts.inter(
+                  fontSize: 13.sp,
+                  color: context.textSecondary,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'e.g. Berlin, Germany',
+                  prefixIcon: const Icon(Icons.location_city_rounded),
+                  filled: true,
+                  fillColor: Theme.of(context).cardTheme.color,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              ElevatedButton.icon(
+                onPressed: isDetecting
+                    ? null
+                    : () async {
+                        setModalState(() => isDetecting = true);
+                        try {
+                          final status = await Permission.location.request();
+                          if (status.isGranted) {
+                            final position =
+                                await Geolocator.getCurrentPosition(
+                                  desiredAccuracy: LocationAccuracy.low,
+                                );
+                            // For simplicity, we'll use a generic label or try to fetch a city name
+                            // In a real app, you'd use reverse geocoding here.
+                            // We'll just fetch weather by coords directly.
+                            await weatherProvider.updateWeatherByCoords(
+                              position.latitude,
+                              position.longitude,
+                              'Current Location',
+                            );
+                            provider.updateLocation('Current Location');
+                            if (context.mounted) Navigator.pop(context);
+                          }
+                        } catch (e) {
+                          debugPrint('Location error: $e');
+                        } finally {
+                          if (context.mounted) {
+                            setModalState(() => isDetecting = false);
+                          }
+                        }
+                      },
+                icon: isDetecting
+                    ? SizedBox(
+                        width: 18.w,
+                        height: 18.w,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      )
+                    : const Icon(Icons.my_location_rounded),
+                label: Text(
+                  isDetecting ? 'Detecting...' : 'Use Current Location',
+                ),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50.h),
+                  backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
+                  foregroundColor: AppColors.secondary,
+                  elevation: 0,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: Size(0, 50.h),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (controller.text.isNotEmpty) {
+                          provider.updateLocation(controller.text);
+                          weatherProvider.updateWeather(controller.text);
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('Save'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(0, 50.h),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 20.h),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (controller.text.isNotEmpty) {
-                provider.updateLocation(controller.text);
-                weatherProvider.updateWeather(controller.text);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }
@@ -1239,8 +1359,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 borderRadius: BorderRadius.circular(24.r),
                 border: Border.all(
                   color: timerProvider.isRunning
-                      ? AppColors.secondary.withOpacity(0.3)
-                      : Theme.of(context).dividerColor.withOpacity(0.05),
+                      ? AppColors.secondary.withValues(alpha: 0.3)
+                      : Theme.of(context).dividerColor.withValues(alpha: 0.05),
                 ),
               ),
               child: Column(
@@ -1311,7 +1431,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(24.r),
                 border: Border.all(
-                  color: Theme.of(context).dividerColor.withOpacity(0.05),
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
                 ),
               ),
               child: Column(
@@ -1363,7 +1483,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(24.r),
               border: Border.all(
-                color: Theme.of(context).dividerColor.withOpacity(0.05),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
               ),
             ),
             child: Row(
@@ -1371,7 +1491,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 Container(
                   padding: EdgeInsets.all(12.w),
                   decoration: BoxDecoration(
-                    color: AppColors.secondary.withOpacity(0.1),
+                    color: AppColors.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                   child: Icon(
