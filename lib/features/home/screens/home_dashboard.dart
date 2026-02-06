@@ -37,6 +37,67 @@ class _HomeDashboardState extends State<HomeDashboard> {
   bool _isSummaryExpanded = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initRealLocation();
+    });
+  }
+
+  Future<void> _initRealLocation() async {
+    final weatherProvider = Provider.of<WeatherProvider>(
+      context,
+      listen: false,
+    );
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+
+    try {
+      // 1. Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Just load weather for whatever city is in profile
+        weatherProvider.updateWeather(homeProvider.locationName);
+        return;
+      }
+
+      // 2. Check and request permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          weatherProvider.updateWeather(homeProvider.locationName);
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        weatherProvider.updateWeather(homeProvider.locationName);
+        return;
+      }
+
+      // 3. Get position with a reasonable timeout
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+        timeLimit: const Duration(seconds: 5),
+      );
+
+      // 4. Update weather by coords
+      await weatherProvider.updateWeatherByCoords(
+        position.latitude,
+        position.longitude,
+        'Current Location',
+      );
+
+      // 5. Update home provider session location
+      homeProvider.updateLocation('Current Location');
+    } catch (e) {
+      debugPrint('Real Location Detection Failed: $e');
+      // Fallback to profile location if GPS fails
+      weatherProvider.updateWeather(homeProvider.locationName);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer6<
       HomeProvider,
@@ -285,13 +346,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
     HomeProvider provider,
     WeatherProvider weatherProvider,
   ) {
-    // Proactively fetch weather if city changed or not loaded
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!weatherProvider.isLoading) {
-        weatherProvider.updateWeather(provider.locationName);
-      }
-    });
-
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -304,6 +358,18 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 width: 12.w,
                 height: 12.w,
                 child: const CircularProgressIndicator(strokeWidth: 2),
+              )
+            else if (weatherProvider.currentWeather?.iconUrl.isNotEmpty ??
+                false)
+              Image.network(
+                weatherProvider.currentWeather!.iconUrl,
+                width: 24.w,
+                height: 24.w,
+                errorBuilder: (context, error, stackTrace) => Icon(
+                  weatherProvider.weatherIcon,
+                  size: 16.sp,
+                  color: AppColors.secondary,
+                ),
               )
             else
               Icon(
@@ -856,8 +922,15 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 
   Widget _buildQuickAccessSection(BuildContext context) {
-    return Consumer<NavigationProvider>(
-      builder: (context, navProvider, child) {
+    return Consumer3<NavigationProvider, HomeProvider, WeatherProvider>(
+      builder: (context, navProvider, homeProvider, weatherProvider, child) {
+        final displayLocation =
+            weatherProvider.currentWeather?.cityName ??
+            homeProvider.locationName;
+        final isLocating =
+            weatherProvider.isLoading &&
+            homeProvider.locationName == 'Current Location';
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -868,9 +941,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
               children: [
                 _buildQuickTile(
                   context,
-                  Icons.location_on_outlined,
-                  'Location',
+                  isLocating
+                      ? Icons.location_searching_rounded
+                      : Icons.location_on_outlined,
+                  isLocating ? 'Locating...' : displayLocation,
                   () {
+                    context.hapticClick();
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -881,6 +957,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   0,
                 ),
                 _buildQuickTile(context, Icons.note_alt_outlined, 'Notes', () {
+                  context.hapticClick();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -893,6 +970,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   Icons.help_outline_rounded,
                   'Support',
                   () {
+                    context.hapticClick();
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -907,6 +985,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   Icons.settings_outlined,
                   'Settings',
                   () {
+                    context.hapticClick();
                     navProvider.setIndex(4);
                   },
                   3,

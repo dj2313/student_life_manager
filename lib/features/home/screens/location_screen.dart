@@ -2,38 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../providers/home_provider.dart';
+import '../../../core/providers/weather_provider.dart';
 
 class LocationScreen extends StatelessWidget {
   const LocationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          _buildSliverAppBar(context),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildLocationHeader(),
-                  SizedBox(height: 32.h),
-                  _buildMapPlaceholder(),
-                  SizedBox(height: 32.h),
-                  _buildAddressSection(),
-                  SizedBox(height: 32.h),
-                  _buildNearbySection(),
-                  SizedBox(height: 120.h),
-                ],
+    return Consumer2<HomeProvider, WeatherProvider>(
+      builder: (context, homeProvider, weatherProvider, child) {
+        return Scaffold(
+          backgroundColor: AppColors.backgroundLight,
+          body: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              _buildSliverAppBar(context),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLocationHeader(homeProvider, weatherProvider),
+                      SizedBox(height: 32.h),
+                      _buildMapPlaceholder(weatherProvider),
+                      SizedBox(height: 32.h),
+                      _buildAddressSection(weatherProvider),
+                      SizedBox(height: 32.h),
+                      _buildNearbySection(),
+                      SizedBox(height: 120.h),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -62,7 +69,12 @@ class LocationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLocationHeader() {
+  Widget _buildLocationHeader(
+    HomeProvider homeProvider,
+    WeatherProvider weatherProvider,
+  ) {
+    final cityName =
+        weatherProvider.currentWeather?.cityName ?? homeProvider.locationName;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -82,12 +94,15 @@ class LocationScreen extends StatelessWidget {
               size: 32.sp,
             ),
             SizedBox(width: 12.w),
-            Text(
-              'Berlin, DE',
-              style: GoogleFonts.outfit(
-                fontSize: 32.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+            Expanded(
+              child: Text(
+                cityName,
+                style: GoogleFonts.outfit(
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -96,7 +111,7 @@ class LocationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMapPlaceholder() {
+  Widget _buildMapPlaceholder(WeatherProvider weatherProvider) {
     return Container(
       height: 240.h,
       width: double.infinity,
@@ -115,17 +130,29 @@ class LocationScreen extends StatelessWidget {
       child: Stack(
         children: [
           Center(
-            child: Icon(
-              Icons.map_rounded,
-              size: 64.sp,
-              color: AppColors.borderLight,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.map_rounded,
+                  size: 64.sp,
+                  color: AppColors.borderLight,
+                ),
+                if (weatherProvider.isLoading)
+                  Padding(
+                    padding: EdgeInsets.only(top: 16.h),
+                    child: const CircularProgressIndicator(),
+                  ),
+              ],
             ),
           ),
           Positioned(
             bottom: 16.h,
             right: 16.w,
             child: FloatingActionButton.small(
-              onPressed: () {},
+              onPressed: () {
+                // Trigger refresh if needed
+              },
               backgroundColor: AppColors.primary,
               child: const Icon(Icons.my_location_rounded, color: Colors.white),
             ),
@@ -135,12 +162,13 @@ class LocationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAddressSection() {
+  Widget _buildAddressSection(WeatherProvider weatherProvider) {
+    final cityName = weatherProvider.currentWeather?.cityName ?? 'Detecting...';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Detailed Address',
+          'Current City',
           style: GoogleFonts.outfit(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
@@ -164,7 +192,7 @@ class LocationScreen extends StatelessWidget {
               SizedBox(width: 16.w),
               Expanded(
                 child: Text(
-                  'Alexanderplatz 1, 10178 Berlin, Germany',
+                  weatherProvider.isLoading ? 'Locating...' : cityName,
                   style: GoogleFonts.inter(
                     fontSize: 14.sp,
                     color: AppColors.primary,
@@ -183,7 +211,7 @@ class LocationScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Saved Places',
+          'Nearby Suggestions',
           style: GoogleFonts.outfit(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
@@ -192,19 +220,19 @@ class LocationScreen extends StatelessWidget {
         ),
         SizedBox(height: 12.h),
         _buildNearbyTile(
-          'University Campus',
-          '2.4 km away',
-          Icons.school_outlined,
+          'Registration Office',
+          'Search for Burgeramt',
+          Icons.account_balance_rounded,
         ),
         _buildNearbyTile(
-          'Lidl Supermarket',
-          '0.5 km away',
-          Icons.shopping_basket_outlined,
+          'Local Transport',
+          'Find nearest S-Bahn/U-Bahn',
+          Icons.train_rounded,
         ),
         _buildNearbyTile(
-          'Student Residence',
-          '1.2 km away',
-          Icons.hotel_outlined,
+          'Student Cafeteria',
+          'Uni Mensa locations',
+          Icons.restaurant_rounded,
         ),
       ],
     );

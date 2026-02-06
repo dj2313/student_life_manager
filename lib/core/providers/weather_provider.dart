@@ -20,26 +20,26 @@ class WeatherProvider with ChangeNotifier {
 
   IconData get weatherIcon {
     if (_currentWeather == null) return Icons.cloud_off_rounded;
-    final code = _currentWeather!.iconCode;
-    if (code.contains('01')) {
+    final condition = _currentWeather!.condition.toLowerCase();
+
+    if (condition.contains('sun') || condition.contains('clear')) {
       return Icons.wb_sunny_rounded;
     }
-    if (code.contains('02')) {
+    if (condition.contains('cloud')) {
       return Icons.wb_cloudy_rounded;
     }
-    if (code.contains('03') || code.contains('04')) {
-      return Icons.cloud_rounded;
-    }
-    if (code.contains('09') || code.contains('10')) {
+    if (condition.contains('rain') || condition.contains('drizzle')) {
       return Icons.umbrella_rounded;
     }
-    if (code.contains('11')) {
+    if (condition.contains('thunder') || condition.contains('storm')) {
       return Icons.thunderstorm_rounded;
     }
-    if (code.contains('13')) {
+    if (condition.contains('snow') || condition.contains('ice')) {
       return Icons.ac_unit_rounded;
     }
-    if (code.contains('50')) {
+    if (condition.contains('fog') ||
+        condition.contains('mist') ||
+        condition.contains('haze')) {
       return Icons.foggy;
     }
     return Icons.wb_cloudy_rounded;

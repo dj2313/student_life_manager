@@ -1,93 +1,51 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class WeatherData {
   final double temperature;
   final String condition;
-  final String iconCode;
+  final String iconUrl;
   final String cityName;
 
   WeatherData({
     required this.temperature,
     required this.condition,
-    required this.iconCode,
+    required this.iconUrl,
     required this.cityName,
   });
 
-  factory WeatherData.fromOpenMeteo(Map<String, dynamic> json, String city) {
-    final current = json['current_weather'];
-    final int code = current['weathercode'];
-
-    // Map WMO Weather codes to OpenWeather-style icon codes for compatibility
-    // or just use descriptive strings
-    String icon = '01d'; // default sunny
-    String desc = 'Clear';
-
-    if (code == 0) {
-      icon = '01d';
-      desc = 'Clear';
-    } else if (code <= 3) {
-      icon = '02d';
-      desc = 'Partly Cloudy';
-    } else if (code == 45 || code == 48) {
-      icon = '50d';
-      desc = 'Foggy';
-    } else if (code <= 55) {
-      icon = '09d';
-      desc = 'Drizzle';
-    } else if (code <= 65) {
-      icon = '10d';
-      desc = 'Rainy';
-    } else if (code <= 77) {
-      icon = '13d';
-      desc = 'Snowy';
-    } else if (code <= 82) {
-      icon = '09d';
-      desc = 'Showers';
-    } else if (code <= 86) {
-      icon = '13d';
-      desc = 'Snow Showers';
-    } else if (code >= 95) {
-      icon = '11d';
-      desc = 'Thunderstorm';
-    }
+  factory WeatherData.fromWeatherstack(Map<String, dynamic> json) {
+    final current = json['current'];
+    final location = json['location'];
 
     return WeatherData(
       temperature: (current['temperature'] as num).toDouble(),
-      condition: desc,
-      iconCode: icon,
-      cityName: city,
+      condition: current['weather_descriptions'][0] ?? 'Unknown',
+      iconUrl: current['weather_icons'][0] ?? '',
+      cityName: location['name'],
     );
   }
 }
 
 class WeatherService {
   final Dio _dio = Dio();
+  // Using HTTP because Weatherstack free tier does not support HTTPS
+  static const String _baseUrl = 'http://api.weatherstack.com/current';
+  String get _apiKey => dotenv.env['WEATHERSTACK_API_KEY'] ?? '';
 
   Future<WeatherData?> fetchWeather(String city) async {
     try {
-      // 1. Geocoding: Get Lat/Long for the city name
-      final geoResponse = await _dio.get(
-        'https://geocoding-api.open-meteo.com/v1/search',
-        queryParameters: {
-          'name': city,
-          'count': 1,
-          'language': 'en',
-          'format': 'json',
-        },
+      final response = await _dio.get(
+        _baseUrl,
+        queryParameters: {'access_key': _apiKey, 'query': city},
       );
 
-      if (geoResponse.data['results'] == null ||
-          (geoResponse.data['results'] as List).isEmpty) {
-        return null;
+      if (response.statusCode == 200 && response.data['current'] != null) {
+        return WeatherData.fromWeatherstack(response.data);
+      } else if (response.data['error'] != null) {
+        debugPrint('Weatherstack API Error: ${response.data['error']['info']}');
       }
-
-      final location = geoResponse.data['results'][0];
-      final double lat = location['latitude'];
-      final double lon = location['longitude'];
-      final String displayName = location['name'];
-
-      return fetchWeatherByCoords(lat, lon, displayName);
     } catch (e) {
       debugPrint('Weather Service Error: $e');
     }
@@ -97,21 +55,18 @@ class WeatherService {
   Future<WeatherData?> fetchWeatherByCoords(
     double lat,
     double lon,
-    String city,
+    String label,
   ) async {
     try {
-      final weatherResponse = await _dio.get(
-        'https://api.open-meteo.com/v1/forecast',
-        queryParameters: {
-          'latitude': lat,
-          'longitude': lon,
-          'current_weather': true,
-          'timezone': 'auto',
-        },
+      final response = await _dio.get(
+        _baseUrl,
+        queryParameters: {'access_key': _apiKey, 'query': '$lat,$lon'},
       );
 
-      if (weatherResponse.statusCode == 200) {
-        return WeatherData.fromOpenMeteo(weatherResponse.data, city);
+      if (response.statusCode == 200 && response.data['current'] != null) {
+        return WeatherData.fromWeatherstack(response.data);
+      } else if (response.data['error'] != null) {
+        debugPrint('Weatherstack API Error: ${response.data['error']['info']}');
       }
     } catch (e) {
       debugPrint('Weather Service Error by coords: $e');

@@ -83,6 +83,7 @@ class HomeProvider extends ChangeNotifier {
   }
 
   Future<void> updateLocation(String location) async {
+    if (_locationName == location) return;
     try {
       _locationName = location;
       await _firestore.collection('users').doc(_uid).set({
