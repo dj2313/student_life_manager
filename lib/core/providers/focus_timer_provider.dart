@@ -9,6 +9,8 @@ class FocusTimerProvider with ChangeNotifier {
   int get secondsRemaining => _secondsRemaining;
   bool get isRunning => _isRunning;
 
+  double get progress => (25 * 60 - _secondsRemaining) / (25 * 60);
+
   String get formattedTime {
     final minutes = (_secondsRemaining ~/ 60).toString().padLeft(2, '0');
     final seconds = (_secondsRemaining % 60).toString().padLeft(2, '0');

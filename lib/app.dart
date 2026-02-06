@@ -19,6 +19,7 @@ import 'features/home/providers/bureaucracy_provider.dart';
 import 'features/money/providers/job_provider.dart';
 import 'features/study/providers/gpa_provider.dart';
 import 'features/home/providers/housing_provider.dart';
+import 'core/providers/weather_provider.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => HousingProvider()),
         ChangeNotifierProvider(create: (_) => StudyAssistantProvider()),
         ChangeNotifierProvider(create: (_) => FocusTimerProvider()),
+        ChangeNotifierProvider(create: (_) => WeatherProvider()),
       ],
 
       child: ScreenUtilInit(

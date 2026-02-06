@@ -2,10 +2,33 @@ import 'package:flutter/material.dart';
 import '../../../data/models/student_os_models.dart';
 
 class JobProvider with ChangeNotifier {
-  List<WorkSession> _sessions = [];
+  final List<WorkSession> _sessions = [];
+  final List<JobApplication> _applications = [];
   final double annualDayLimit = 140.0; // German student visa limit
 
   List<WorkSession> get sessions => _sessions;
+  List<JobApplication> get applications => _applications;
+
+  void addApplication(JobApplication app) {
+    _applications.add(app);
+    notifyListeners();
+  }
+
+  void updateApplicationStatus(String id, String newStatus) {
+    final index = _applications.indexWhere((app) => app.id == id);
+    if (index != -1) {
+      final app = _applications[index];
+      _applications[index] = JobApplication(
+        id: app.id,
+        role: app.role,
+        company: app.company,
+        status: newStatus,
+        appliedDate: app.appliedDate,
+        salaryRange: app.salaryRange,
+      );
+      notifyListeners();
+    }
+  }
 
   void addSession(WorkSession session) {
     _sessions.add(session);

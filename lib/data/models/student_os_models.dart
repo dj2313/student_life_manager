@@ -21,6 +21,8 @@ class BureaucracyTask {
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
+  bool get isCompleted => status == BureaucracyStatus.completed;
+
   BureaucracyTask copyWith({
     BureaucracyStatus? status,
     DateTime? deadline,
@@ -39,17 +41,18 @@ class BureaucracyTask {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'status': status.name,
-        'category': category,
-        'deadline': deadline?.toIso8601String(),
-        'requiredDocuments': requiredDocuments,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'status': status.name,
+    'category': category,
+    'deadline': deadline?.toIso8601String(),
+    'requiredDocuments': requiredDocuments,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
-  factory BureaucracyTask.fromJson(Map<String, dynamic> json) => BureaucracyTask(
+  factory BureaucracyTask.fromJson(Map<String, dynamic> json) =>
+      BureaucracyTask(
         id: json['id'],
         title: json['title'],
         description: json['description'],
@@ -58,9 +61,13 @@ class BureaucracyTask {
           orElse: () => BureaucracyStatus.pending,
         ),
         category: json['category'] ?? 'General',
-        deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
+        deadline: json['deadline'] != null
+            ? DateTime.parse(json['deadline'])
+            : null,
         requiredDocuments: List<String>.from(json['requiredDocuments'] ?? []),
-        createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'])
+            : DateTime.now(),
       );
 }
 
@@ -95,6 +102,42 @@ class WorkSession {
     hours: (json['hours'] as num).toDouble(),
     company: json['company'],
     isHoliday: json['isHoliday'] ?? false,
+  );
+}
+
+class JobApplication {
+  final String id;
+  final String role;
+  final String company;
+  final String status;
+  final DateTime appliedDate;
+  final String? salaryRange;
+
+  JobApplication({
+    required this.id,
+    required this.role,
+    required this.company,
+    required this.status,
+    required this.appliedDate,
+    this.salaryRange,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'role': role,
+    'company': company,
+    'status': status,
+    'appliedDate': appliedDate.toIso8601String(),
+    'salaryRange': salaryRange,
+  };
+
+  factory JobApplication.fromJson(Map<String, dynamic> json) => JobApplication(
+    id: json['id'],
+    role: json['role'],
+    company: json['company'],
+    status: json['status'],
+    appliedDate: DateTime.parse(json['appliedDate']),
+    salaryRange: json['salaryRange'],
   );
 }
 

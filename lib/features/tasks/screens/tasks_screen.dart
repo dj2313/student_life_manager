@@ -2,13 +2,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:uuid/uuid.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../providers/tasks_provider.dart';
+import '../../../core/utils/context_extensions.dart';
+import './calendar_screen.dart';
 import '../../../data/models/todo.dart';
 
 class TasksScreen extends StatefulWidget {
@@ -21,54 +23,63 @@ class TasksScreen extends StatefulWidget {
 class _TasksScreenState extends State<TasksScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final stt.SpeechToText _speech = stt.SpeechToText();
+  final SpeechToText _speechToText = SpeechToText();
   bool _isListening = false;
-  String _voiceText = "";
+  String _voiceText = '';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _initSpeech();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  void _initSpeech() async {
+    await _speechToText.initialize();
+    setState(() {});
   }
 
-  Future<void> _listen() async {
+  void _listen() async {
     if (!_isListening) {
-      bool available = await _speech.initialize();
+      bool available = await _speechToText.initialize(
+        onStatus: (status) => debugPrint('onStatus: $status'),
+        onError: (errorNotification) =>
+            debugPrint('onError: $errorNotification'),
+      );
       if (available) {
+        context.hapticClick();
         setState(() => _isListening = true);
-        _speech.listen(
-          onResult: (val) => setState(() {
-            _voiceText = val.recognizedWords;
-          }),
+        _speechToText.listen(
+          onResult: (result) {
+            setState(() {
+              _voiceText = result.recognizedWords;
+              if (result.finalResult) {
+                _isListening = false;
+                _showVoiceAddTaskDialog(_voiceText);
+              }
+            });
+          },
         );
       }
     } else {
       setState(() => _isListening = false);
-      _speech.stop();
-      if (_voiceText.isNotEmpty) {
-        _handleVoiceTask(_voiceText);
-        _voiceText = "";
-      }
+      _speechToText.stop();
     }
   }
 
-  void _handleVoiceTask(String text) {
+  void _showVoiceAddTaskDialog(String text) {
+    if (text.isEmpty) return;
     final provider = Provider.of<TasksProvider>(context, listen: false);
-    final newTask = Todo(
-      id: const Uuid().v4(),
-      title: text,
-      priority: 'medium',
-      dueDate: DateTime.now(),
-      category: 'Personal',
-      createdAt: DateTime.now(),
+    provider.addTask(
+      Todo(
+        id: const Uuid().v4(),
+        title: text,
+        priority: 'high',
+        dueDate: DateTime.now(),
+        category: 'Personal',
+        createdAt: DateTime.now(),
+      ),
     );
-    provider.addTask(newTask);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Task added: $text'),
@@ -78,15 +89,19 @@ class _TasksScreenState extends State<TasksScreen>
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer<TasksProvider>(
       builder: (context, tasksProvider, child) {
-        final textColor = Theme.of(context).colorScheme.primary;
-
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: RefreshIndicator(
-            onRefresh: () => tasksProvider.fetchTasks(),
+          body: SafeArea(
+            bottom: false,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
@@ -184,6 +199,19 @@ class _TasksScreenState extends State<TasksScreen>
           letterSpacing: 1.2,
         ),
       ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.calendar_month_rounded,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CalendarScreen()),
+          ),
+        ),
+        SizedBox(width: 8.w),
+      ],
     );
   }
 
@@ -219,14 +247,44 @@ class _TasksScreenState extends State<TasksScreen>
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(left: 16.w),
-                  child: Text(
-                    'Listening: $_voiceText...',
-                    style: GoogleFonts.inter(
-                      fontSize: 12.sp,
-                      color: AppColors.secondary,
-                      fontStyle: FontStyle.italic,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  child: Row(
+                    children: [
+                      ...List.generate(
+                        3,
+                        (index) =>
+                            Container(
+                                  width: 3.w,
+                                  height: 12.h,
+                                  margin: EdgeInsets.symmetric(horizontal: 2.w),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondary,
+                                    borderRadius: BorderRadius.circular(2.r),
+                                  ),
+                                )
+                                .animate(
+                                  onPlay: (controller) =>
+                                      controller.repeat(reverse: true),
+                                )
+                                .scaleY(
+                                  begin: 0.5,
+                                  end: 1.5,
+                                  duration: (300 + (index * 100)).ms,
+                                  curve: Curves.easeInOut,
+                                ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          'Listening: $_voiceText...',
+                          style: GoogleFonts.inter(
+                            fontSize: 12.sp,
+                            color: AppColors.secondary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -644,7 +702,7 @@ class _TasksScreenState extends State<TasksScreen>
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      initialValue: selectedCategory,
+                      value: selectedCategory,
                       items: ['Study', 'Money', 'Personal', 'Govt']
                           .map(
                             (c) => DropdownMenuItem(value: c, child: Text(c)),
@@ -700,7 +758,6 @@ class _TasksScreenState extends State<TasksScreen>
                           category: selectedCategory,
                           createdAt: DateTime.now(),
                           isRecurring: isRecurring,
-                          recurrenceInterval: isRecurring ? 'Daily' : null,
                           shouldNotify: shouldNotify,
                         ),
                       );

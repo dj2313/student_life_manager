@@ -20,6 +20,8 @@ import './bureaucracy_tracker_screen.dart';
 import './housing_tracker_screen.dart';
 import '../providers/housing_provider.dart';
 import '../../../core/providers/focus_timer_provider.dart';
+import '../../../core/providers/weather_provider.dart';
+import './focus_zen_screen.dart';
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({super.key});
@@ -34,12 +36,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer5<
+    return Consumer6<
       HomeProvider,
       ThemeProvider,
       MoneyProvider,
       StudyProvider,
-      FocusTimerProvider
+      FocusTimerProvider,
+      WeatherProvider
     >(
       builder:
           (
@@ -49,6 +52,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             moneyProvider,
             studyProvider,
             focusTimerProvider,
+            weatherProvider,
             child,
           ) {
             return Scaffold(
@@ -56,7 +60,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
               body: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
-                  _buildSliverAppBar(context, homeProvider, themeProvider),
+                  _buildSliverAppBar(
+                    context,
+                    homeProvider,
+                    themeProvider,
+                    weatherProvider,
+                  ),
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -124,6 +133,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     BuildContext context,
     HomeProvider provider,
     ThemeProvider themeProvider,
+    WeatherProvider weatherProvider,
   ) {
     final textColor = Theme.of(context).colorScheme.primary;
 
@@ -169,8 +179,16 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => _showEditLocationDialog(context, provider),
-                    child: _buildWeatherWidget(context, provider),
+                    onTap: () => _showEditLocationDialog(
+                      context,
+                      provider,
+                      weatherProvider,
+                    ),
+                    child: _buildWeatherWidget(
+                      context,
+                      provider,
+                      weatherProvider,
+                    ),
                   ),
                 ],
               ),
@@ -217,7 +235,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               if (value == 'edit_profile') {
                 _showEditProfileDialog(context, provider);
               } else if (value == 'edit_location') {
-                _showEditLocationDialog(context, provider);
+                _showEditLocationDialog(context, provider, weatherProvider);
               }
             },
             itemBuilder: (context) => [
@@ -260,7 +278,18 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
-  Widget _buildWeatherWidget(BuildContext context, HomeProvider provider) {
+  Widget _buildWeatherWidget(
+    BuildContext context,
+    HomeProvider provider,
+    WeatherProvider weatherProvider,
+  ) {
+    // Proactively fetch weather if not loaded or city changed
+    if (weatherProvider.currentWeather == null && !weatherProvider.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        weatherProvider.updateWeather(provider.locationName);
+      });
+    }
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -268,10 +297,21 @@ class _HomeDashboardState extends State<HomeDashboard> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(provider.weatherIcon, size: 16.sp, color: AppColors.secondary),
+            if (weatherProvider.isLoading)
+              SizedBox(
+                width: 12.w,
+                height: 12.w,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Icon(
+                weatherProvider.weatherIcon,
+                size: 16.sp,
+                color: AppColors.secondary,
+              ),
             SizedBox(width: 4.w),
             Text(
-              provider.temperature,
+              weatherProvider.temperature,
               style: GoogleFonts.outfit(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
@@ -1145,7 +1185,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
-  void _showEditLocationDialog(BuildContext context, HomeProvider provider) {
+  void _showEditLocationDialog(
+    BuildContext context,
+    HomeProvider provider,
+    WeatherProvider weatherProvider,
+  ) {
     final controller = TextEditingController(text: provider.locationName);
     showDialog(
       context: context,
@@ -1164,6 +1208,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             onPressed: () {
               if (controller.text.isNotEmpty) {
                 provider.updateLocation(controller.text);
+                weatherProvider.updateWeather(controller.text);
                 Navigator.pop(context);
               }
             },
@@ -1181,66 +1226,71 @@ class _HomeDashboardState extends State<HomeDashboard> {
   ) {
     return Row(
       children: [
-        // Focus Timer Widget
         Expanded(
-          child: Container(
-            padding: EdgeInsets.all(20.w),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(
-                color: timerProvider.isRunning
-                    ? AppColors.secondary.withOpacity(0.3)
-                    : Theme.of(context).dividerColor.withOpacity(0.05),
-              ),
+          child: GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const FocusZenScreen()),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(
-                      Icons.timer_outlined,
-                      color: AppColors.secondary,
-                      size: 20.sp,
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        context.hapticClick();
-                        if (timerProvider.isRunning) {
-                          timerProvider.stopTimer();
-                        } else {
-                          timerProvider.startTimer();
-                        }
-                      },
-                      child: Icon(
-                        timerProvider.isRunning
-                            ? Icons.pause_circle_filled_rounded
-                            : Icons.play_circle_fill_rounded,
+            child: Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(24.r),
+                border: Border.all(
+                  color: timerProvider.isRunning
+                      ? AppColors.secondary.withOpacity(0.3)
+                      : Theme.of(context).dividerColor.withOpacity(0.05),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(
+                        Icons.timer_outlined,
                         color: AppColors.secondary,
-                        size: 28.sp,
+                        size: 20.sp,
                       ),
+                      GestureDetector(
+                        onTap: () {
+                          context.hapticClick();
+                          if (timerProvider.isRunning) {
+                            timerProvider.stopTimer();
+                          } else {
+                            timerProvider.startTimer();
+                          }
+                        },
+                        child: Icon(
+                          timerProvider.isRunning
+                              ? Icons.pause_circle_filled_rounded
+                              : Icons.play_circle_fill_rounded,
+                          color: AppColors.secondary,
+                          size: 28.sp,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12.h),
+                  Text(
+                    timerProvider.formattedTime,
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                  ],
-                ),
-                SizedBox(height: 12.h),
-                Text(
-                  timerProvider.formattedTime,
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
                   ),
-                ),
-                Text(
-                  'Focus Session',
-                  style: GoogleFonts.inter(
-                    fontSize: 11.sp,
-                    color: context.textSecondary,
+                  Text(
+                    'Focus Session',
+                    style: GoogleFonts.inter(
+                      fontSize: 11.sp,
+                      color: context.textSecondary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
