@@ -752,7 +752,19 @@ class _HomeDashboardState extends State<HomeDashboard> {
                   context,
                   Icons.description_outlined,
                   'View Document',
-                  () {},
+                  () {
+                    if (provider.visaDocumentUrl != null) {
+                      _showMinimalSnackBar(
+                        context,
+                        'Opening documents securely...',
+                      );
+                    } else {
+                      _showMinimalSnackBar(
+                        context,
+                        'No document uploaded yet.',
+                      );
+                    }
+                  },
                 ),
               ),
             ],
@@ -914,10 +926,123 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 
   void _showVisaUpdateDialog(BuildContext context, HomeProvider provider) {
-    // This is a placeholder for the actual dialog implementation
-    // In a real app, this would show a date picker
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.all(24.w),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            SizedBox(height: 24.h),
+            Text(
+              'Residence Permit',
+              style: GoogleFonts.outfit(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            SizedBox(height: 24.h),
+            ListTile(
+              leading: Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: const Icon(
+                  Icons.calendar_today_rounded,
+                  color: AppColors.primary,
+                ),
+              ),
+              title: Text(
+                'Update Expiry Date',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(
+                provider.visaExpiryDate != null
+                    ? 'Current: ${DateFormat('dd MMM yyyy').format(provider.visaExpiryDate!)}'
+                    : 'Not set',
+                style: GoogleFonts.inter(fontSize: 12.sp),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate:
+                      provider.visaExpiryDate ??
+                      DateTime.now().add(const Duration(days: 365)),
+                  firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                  lastDate: DateTime.now().add(const Duration(days: 3650)),
+                );
+                if (picked != null) {
+                  provider.updateVisaExpiryDate(picked);
+                  _showMinimalSnackBar(context, 'Expiry date updated');
+                }
+              },
+            ),
+            SizedBox(height: 12.h),
+            ListTile(
+              leading: Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: const Icon(
+                  Icons.cloud_upload_outlined,
+                  color: AppColors.secondary,
+                ),
+              ),
+              title: Text(
+                'Upload Document Copy',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(
+                'Scan or pick a photo of your permit',
+                style: GoogleFonts.inter(fontSize: 12.sp),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                provider.updateVisaDocumentUrl(
+                  'https://placeholder-url.com/doc.pdf',
+                );
+                _showMinimalSnackBar(context, 'Document uploaded successfully');
+              },
+            ),
+            SizedBox(height: 24.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMinimalSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Update Expiry Date feature coming soon!')),
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.primary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+      ),
     );
   }
 

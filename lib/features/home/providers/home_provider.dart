@@ -20,8 +20,8 @@ class HomeProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String _userName = 'Student User';
-  final String _visaStatus = 'Active';
-  final int _visaDaysRemaining = 5;
+  DateTime? _visaExpiryDate;
+  String? _visaDocumentUrl;
 
   // Weather & Residency Info
   String _locationName = 'Berlin';
@@ -33,8 +33,23 @@ class HomeProvider extends ChangeNotifier {
   List<BureaucracyTask> _bureaucracyTasks = [];
 
   String get userName => _userName;
-  String get visaStatus => _visaStatus;
-  int get visaDaysRemaining => _visaDaysRemaining;
+  DateTime? get visaExpiryDate => _visaExpiryDate;
+  String? get visaDocumentUrl => _visaDocumentUrl;
+
+  String get visaStatus {
+    if (_visaExpiryDate == null) return 'Not Set';
+    final days = _visaExpiryDate!.difference(DateTime.now()).inDays;
+    if (days < 0) return 'Expired';
+    if (days < 30) return 'Expiring Soon';
+    return 'Active';
+  }
+
+  int get visaDaysRemaining {
+    if (_visaExpiryDate == null) return 0;
+    final days = _visaExpiryDate!.difference(DateTime.now()).inDays;
+    return days < 0 ? 0 : days;
+  }
+
   List<Ticket> get activeTickets => _activeTickets;
   List<BureaucracyTask> get bureaucracyTasks => _bureaucracyTasks;
 
@@ -68,7 +83,10 @@ class HomeProvider extends ChangeNotifier {
         final data = doc.data()!;
         _userName = data['name'] ?? 'Student User';
         _locationName = data['location'] ?? 'Berlin';
-        // Add more fields if needed
+        if (data['visaExpiryDate'] != null) {
+          _visaExpiryDate = (data['visaExpiryDate'] as Timestamp).toDate();
+        }
+        _visaDocumentUrl = data['visaDocumentUrl'];
         notifyListeners();
       }
 
@@ -104,6 +122,30 @@ class HomeProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error updating username: $e');
+    }
+  }
+
+  Future<void> updateVisaExpiryDate(DateTime date) async {
+    try {
+      _visaExpiryDate = date;
+      await _firestore.collection('users').doc(_uid).set({
+        'visaExpiryDate': Timestamp.fromDate(date),
+      }, SetOptions(merge: true));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating visa expiry date: $e');
+    }
+  }
+
+  Future<void> updateVisaDocumentUrl(String url) async {
+    try {
+      _visaDocumentUrl = url;
+      await _firestore.collection('users').doc(_uid).set({
+        'visaDocumentUrl': url,
+      }, SetOptions(merge: true));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating visa document URL: $e');
     }
   }
 
