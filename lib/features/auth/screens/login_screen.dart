@@ -187,6 +187,84 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                   ),
                 ),
+                SizedBox(height: 32.h),
+
+                // Divider
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Text(
+                        'OR',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          color: AppColors.textTertiaryLight,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                SizedBox(height: 32.h),
+
+                // Google Sign In Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56.h,
+                  child: OutlinedButton(
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : () async {
+                            final error = await authProvider.signInWithGoogle();
+                            if (error != null && context.mounted) {
+                              if (error != "Sign in cancelled") {
+                                ScaffoldMessenger.of(
+                                  context,
+                                ).showSnackBar(SnackBar(content: Text(error)));
+                              }
+                            } else if (context.mounted) {
+                              Navigator.pop(context);
+                            }
+                          },
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      side: BorderSide(color: Theme.of(context).dividerColor),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.network(
+                          'https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png',
+                          height: 24.h,
+                          width: 24.h,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.login_rounded,
+                            size: 24.h,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Flexible(
+                          child: Text(
+                            'Continue with Google',
+                            style: GoogleFonts.inter(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimaryLight,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 SizedBox(height: 48.h),
               ],
             ),

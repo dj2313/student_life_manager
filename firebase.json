@@ -1,27 +1,30 @@
 {
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
-  "flutter": {
-    "platforms": {
-      "android": {
-        "default": {
-          "projectId": "student-life-c187c",
-          "appId": "1:260644491609:android:3b3c4227fd7594e6fdfc48",
-          "fileOutput": "android/app/google-services.json"
+    "firestore": {
+        "rules": "firestore.rules",
+        "indexes": "firestore.indexes.json"
+    },
+    "storage": {
+        "rules": "storage.rules"
+    },
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "student-life-a9cc3",
+                    "appId": "1:732686104757:android:efed3bfcc64e49928ae6fc",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "student-life-a9cc3",
+                    "configurations": {
+                        "android": "1:732686104757:android:efed3bfcc64e49928ae6fc",
+                        "ios": "1:732686104757:ios:ffaac9c29af106d18ae6fc",
+                        "web": "1:732686104757:web:87b753ef122573038ae6fc"
+                    }
+                }
+            }
         }
-      },
-      "dart": {
-        "lib/firebase_options.dart": {
-          "projectId": "student-life-c187c",
-          "configurations": {
-            "android": "1:260644491609:android:3b3c4227fd7594e6fdfc48",
-            "ios": "1:260644491609:ios:b5d31431a0fcb68ffdfc48",
-            "web": "1:260644491609:web:0f3f2bf312da2548fdfc48"
-          }
-        }
-      }
     }
-  }
 }

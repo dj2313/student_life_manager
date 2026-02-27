@@ -24,6 +24,7 @@ import '../../../core/providers/weather_provider.dart';
 import './focus_zen_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../../core/services/notification_service.dart';
 
 class HomeDashboard extends StatefulWidget {
   const HomeDashboard({super.key});
@@ -33,7 +34,6 @@ class HomeDashboard extends StatefulWidget {
 }
 
 class _HomeDashboardState extends State<HomeDashboard> {
-  bool _isNotificationOn = true;
   bool _isSummaryExpanded = false;
 
   @override
@@ -262,18 +262,13 @@ class _HomeDashboardState extends State<HomeDashboard> {
       ),
       actions: [
         IconButton(
-          onPressed: () {
-            setState(() {
-              _isNotificationOn = !_isNotificationOn;
-            });
+          onPressed: () async {
+            context.hapticClick();
+            await NotificationService().requestPermissions();
           },
           icon: Icon(
-            _isNotificationOn
-                ? Icons.notifications_active_rounded
-                : Icons.notifications_off_rounded,
-            color: _isNotificationOn
-                ? AppColors.secondary
-                : AppColors.textTertiaryLight,
+            Icons.notifications_active_rounded,
+            color: AppColors.secondary,
             size: 24.sp,
           ),
         ),
@@ -331,8 +326,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
             ],
             child: CircleAvatar(
               radius: 20.r,
-              backgroundImage: const NetworkImage(
-                'https://ui-avatars.com/api/?name=Dhruv+P&background=6366f1&color=fff',
+              backgroundImage: NetworkImage(
+                'https://ui-avatars.com/api/?name=${Uri.encodeComponent(provider.userName)}&background=6366f1&color=fff',
               ),
             ),
           ),
@@ -535,7 +530,20 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       context,
                       Icons.check_circle_outline_rounded,
                       'Tasks',
-                      '${provider.bureaucracyTasks.where((t) => t.isCompleted).length} of ${provider.bureaucracyTasks.length}',
+                      () {
+                        final tasksProvider = context.read<TasksProvider>();
+                        final bureaucracyProvider = context
+                            .read<BureaucracyProvider>();
+                        final completed =
+                            tasksProvider.completedCount +
+                            bureaucracyProvider.tasks
+                                .where((t) => t.isCompleted)
+                                .length;
+                        final total =
+                            tasksProvider.totalCount +
+                            bureaucracyProvider.tasks.length;
+                        return '$completed of $total';
+                      }(),
                       AppColors.success,
                     ),
                   ],
@@ -827,11 +835,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
     HomeProvider homeProvider,
   ) {
     final tasksProvider = context.read<TasksProvider>();
+    final bureaucracyProvider = context.read<BureaucracyProvider>();
     final completedTasks =
-        homeProvider.bureaucracyTasks.where((t) => t.isCompleted).length +
+        bureaucracyProvider.tasks.where((t) => t.isCompleted).length +
         tasksProvider.completedCount;
     final totalTasks =
-        homeProvider.bureaucracyTasks.length + tasksProvider.totalCount;
+        bureaucracyProvider.tasks.length + tasksProvider.totalCount;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1017,10 +1026,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               ),
               onTap: () {
                 Navigator.pop(context);
-                provider.updateVisaDocumentUrl(
-                  'https://placeholder-url.com/doc.pdf',
-                );
-                _showMinimalSnackBar(context, 'Document uploaded successfully');
+                _showMinimalSnackBar(context, 'Document upload coming soon.');
               },
             ),
             SizedBox(height: 24.h),

@@ -23,9 +23,6 @@ class NotesProvider with ChangeNotifier {
 
   Future<void> _init() async {
     try {
-      if (_auth.currentUser == null) {
-        await _auth.signInAnonymously();
-      }
       await fetchNotes();
     } catch (e) {
       debugPrint('NotesProvider Initialization Error: $e');
@@ -95,11 +92,19 @@ class NotesProvider with ChangeNotifier {
           .set(note.toJson());
 
       if (note.shouldNotify) {
+        // Show an immediate confirmation notification
+        await _notificationService.showNotification(
+          id: note.id.hashCode + 20000,
+          title: '📝 Note Reminder Set',
+          body:
+              '"${note.title}" reminder scheduled for ${note.updatedAt.hour.toString().padLeft(2, '0')}:${note.updatedAt.minute.toString().padLeft(2, '0')}',
+        );
+        // Schedule the actual reminder at the user-selected date/time
         await _notificationService.scheduleNotification(
           id: note.id.hashCode,
-          title: "Note Reminder: ${note.title}",
-          body: "Click to check your note!",
-          scheduledDate: DateTime.now().add(const Duration(hours: 1)),
+          title: '📌 Note Reminder: ${note.title}',
+          body: 'Click to check your note!',
+          scheduledDate: note.updatedAt,
         );
       }
 
@@ -125,6 +130,26 @@ class NotesProvider with ChangeNotifier {
           .doc(updatedNote.id)
           .update(updatedNote.toJson());
 
+      // Cancel any existing notification for this note
+      await _notificationService.cancelNotification(updatedNote.id.hashCode);
+
+      if (updatedNote.shouldNotify) {
+        // Show an immediate confirmation notification
+        await _notificationService.showNotification(
+          id: updatedNote.id.hashCode + 20000,
+          title: '📝 Note Reminder Updated',
+          body:
+              '"${updatedNote.title}" reminder rescheduled for ${updatedNote.updatedAt.hour.toString().padLeft(2, '0')}:${updatedNote.updatedAt.minute.toString().padLeft(2, '0')}',
+        );
+        // Reschedule at the new date/time
+        await _notificationService.scheduleNotification(
+          id: updatedNote.id.hashCode,
+          title: '📌 Note Reminder: ${updatedNote.title}',
+          body: 'Click to check your note!',
+          scheduledDate: updatedNote.updatedAt,
+        );
+      }
+
       final index = _notes.indexWhere((note) => note.id == updatedNote.id);
       if (index != -1) {
         _notes[index] = updatedNote;
@@ -144,6 +169,8 @@ class NotesProvider with ChangeNotifier {
           .doc(id)
           .delete();
 
+      // Cancel any scheduled notification for this note
+      await _notificationService.cancelNotification(id.hashCode);
       _notes.removeWhere((note) => note.id == id);
       notifyListeners();
     } catch (e) {

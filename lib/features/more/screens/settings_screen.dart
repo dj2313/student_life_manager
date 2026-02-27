@@ -9,7 +9,12 @@ import '../../auth/providers/auth_provider.dart';
 import '../../home/providers/home_provider.dart';
 import 'calculator_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/utils/context_extensions.dart';
+import '../../tasks/providers/tasks_provider.dart';
+import '../../notes/providers/notes_provider.dart';
+import '../../money/providers/money_provider.dart';
+import '../../../core/providers/navigation_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -52,9 +57,50 @@ class SettingsScreen extends StatelessWidget {
                   _buildSettingsTile(
                     context,
                     Icons.notifications_none_rounded,
-                    'Notifications',
+                    'Push Notifications',
                     AppColors.secondary,
-                    onTap: () => _handleNotificationPermission(context),
+                    trailing: Switch.adaptive(
+                      value: homeProvider.notificationsEnabled,
+                      onChanged: (value) async {
+                        context.hapticClick();
+                        if (value) {
+                          final granted = await NotificationService()
+                              .requestPermissions();
+                          if (!granted) {
+                            if (context.mounted) {
+                              _showMinimalSnackBar(
+                                context,
+                                'Notification permission required',
+                              );
+                            }
+                            return;
+                          }
+                        }
+                        await homeProvider.updateNotificationsEnabled(value);
+                      },
+                    ),
+                  ),
+                  _buildSettingsTile(
+                    context,
+                    Icons.alarm_rounded,
+                    'Task Reminders',
+                    Colors.orange,
+                    trailing: Switch.adaptive(
+                      value: homeProvider.remindersEnabled,
+                      onChanged: (value) async {
+                        context.hapticClick();
+                        if (value) {
+                          // Check exact alarm and notifications
+                          final status =
+                              await Permission.scheduleExactAlarm.status;
+                          if (status.isDenied) {
+                            await Permission.scheduleExactAlarm.request();
+                          }
+                          await NotificationService().requestPermissions();
+                        }
+                        await homeProvider.updateRemindersEnabled(value);
+                      },
+                    ),
                   ),
                 ]),
 
@@ -76,10 +122,14 @@ class SettingsScreen extends StatelessWidget {
                     Icons.history_rounded,
                     'Session History',
                     Colors.teal,
-                    onTap: () => _showMinimalSnackBar(
-                      context,
-                      'History synced with cloud',
-                    ),
+                    onTap: () {
+                      context.hapticClick();
+                      // Navigate to Study tab (index 3)
+                      Provider.of<NavigationProvider>(
+                        context,
+                        listen: false,
+                      ).setIndex(3);
+                    },
                   ),
                 ]),
 
@@ -89,7 +139,33 @@ class SettingsScreen extends StatelessWidget {
                     Icons.cloud_done_outlined,
                     'Firebase Sync',
                     Colors.blue,
-                    onTap: () => _handleDataOperation(context, 'Sync'),
+                    onTap: () async {
+                      context.hapticClick();
+                      _showMinimalSnackBar(context, 'Syncing...');
+                      try {
+                        await Future.wait([
+                          Provider.of<TasksProvider>(
+                            context,
+                            listen: false,
+                          ).fetchTasks(),
+                          Provider.of<NotesProvider>(
+                            context,
+                            listen: false,
+                          ).fetchNotes(),
+                          Provider.of<MoneyProvider>(
+                            context,
+                            listen: false,
+                          ).fetchBalances(),
+                        ]);
+                        if (context.mounted) {
+                          _showMinimalSnackBar(context, 'Sync complete');
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          _showMinimalSnackBar(context, 'Sync failed');
+                        }
+                      }
+                    },
                   ),
                   _buildSettingsTile(
                     context,
@@ -420,42 +496,6 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _handleNotificationPermission(BuildContext context) async {
-    final status = await Permission.notification.request();
-    _showMinimalSnackBar(
-      context,
-      status.isGranted ? 'Notifications active' : 'Permission denied',
-    );
-  }
-
-  void _handleDataOperation(BuildContext context, String operation) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).cardTheme.color,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24.r),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(color: AppColors.primary),
-            SizedBox(height: 20.h),
-            Text(
-              '$operation in sync...',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pop(context);
-      _showMinimalSnackBar(context, '$operation successful');
-    });
   }
 
   void _showAboutDialog(BuildContext context) {

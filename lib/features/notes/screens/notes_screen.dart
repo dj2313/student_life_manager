@@ -7,6 +7,7 @@ import '../providers/notes_provider.dart';
 import '../../../data/models/note.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/widgets/premium_empty_state.dart';
 
 class NotesScreen extends StatelessWidget {
   const NotesScreen({super.key});
@@ -31,13 +32,14 @@ class NotesScreen extends StatelessWidget {
                   )
                 else if (notesProvider.notes.isEmpty)
                   SliverFillRemaining(
-                    child: Center(
-                      child: Text(
-                        'No notes yet',
-                        style: GoogleFonts.inter(
-                          color: AppColors.textSecondaryLight,
-                        ),
-                      ),
+                    child: PremiumEmptyState(
+                      icon: Icons.note_add_outlined,
+                      title: 'Blank Page',
+                      subtitle:
+                          'Your notebook is empty. Ready to capture your next big idea?',
+                      actionLabel: 'Create Note',
+                      onActionPressed: () =>
+                          _showNoteDialog(context, notesProvider),
                     ),
                   )
                 else
@@ -202,6 +204,7 @@ class NotesScreen extends StatelessWidget {
   }) {
     final titleController = TextEditingController(text: note?.title);
     final contentController = TextEditingController(text: note?.content);
+    final formKey = GlobalKey<FormState>();
     DateTime selectedDate = note?.updatedAt ?? DateTime.now();
     bool shouldNotify = note?.shouldNotify ?? false;
 
@@ -271,13 +274,29 @@ class NotesScreen extends StatelessWidget {
                         color: AppColors.secondary,
                       ),
                       SizedBox(width: 8.w),
-                      Text(
-                        DateFormat('MMM dd, yyyy - HH:mm').format(selectedDate),
-                        style: GoogleFonts.inter(
-                          fontSize: 14.sp,
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Reminder Time',
+                            style: GoogleFonts.inter(
+                              fontSize: 10.sp,
+                              color: AppColors.textTertiaryLight,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            DateFormat(
+                              'MMM dd, yyyy - HH:mm',
+                            ).format(selectedDate),
+                            style: GoogleFonts.inter(
+                              fontSize: 14.sp,
+                              color: AppColors.secondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -292,7 +311,7 @@ class NotesScreen extends StatelessWidget {
                   ),
                   SizedBox(width: 8.w),
                   Text(
-                    'Notify after 1 hr',
+                    'Notify at selected time',
                     style: GoogleFonts.inter(
                       fontSize: 14.sp,
                       color: AppColors.textSecondaryLight,
@@ -310,29 +329,44 @@ class NotesScreen extends StatelessWidget {
               SizedBox(height: 8.h),
               Expanded(
                 child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: titleController,
-                        style: GoogleFonts.outfit(
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.bold,
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: titleController,
+                          style: GoogleFonts.outfit(
+                            fontSize: 24.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: 'Title',
+                            border: InputBorder.none,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter a title';
+                            }
+                            return null;
+                          },
                         ),
-                        decoration: const InputDecoration(
-                          hintText: 'Title',
-                          border: InputBorder.none,
+                        TextFormField(
+                          controller: contentController,
+                          maxLines: null,
+                          style: GoogleFonts.inter(fontSize: 16.sp),
+                          decoration: const InputDecoration(
+                            hintText: 'Start typing...',
+                            border: InputBorder.none,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter some content';
+                            }
+                            return null;
+                          },
                         ),
-                      ),
-                      TextField(
-                        controller: contentController,
-                        maxLines: null,
-                        style: GoogleFonts.inter(fontSize: 16.sp),
-                        decoration: const InputDecoration(
-                          hintText: 'Start typing...',
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -342,15 +376,12 @@ class NotesScreen extends StatelessWidget {
                 height: 56.h,
                 child: ElevatedButton(
                   onPressed: () {
-                    if (titleController.text.isNotEmpty ||
-                        contentController.text.isNotEmpty) {
+                    if (formKey.currentState!.validate()) {
                       final newNote = Note(
                         id: note?.id ?? const Uuid().v4(),
-                        title: titleController.text.isEmpty
-                            ? 'Untitled'
-                            : titleController.text,
+                        title: titleController.text,
                         content: contentController.text,
-                        createdAt: note?.createdAt ?? selectedDate,
+                        createdAt: note?.createdAt ?? DateTime.now(),
                         updatedAt: selectedDate,
                         tags: note?.tags ?? ['Work'],
                         shouldNotify: shouldNotify,
@@ -360,8 +391,8 @@ class NotesScreen extends StatelessWidget {
                       } else {
                         provider.updateNote(newNote);
                       }
+                      Navigator.pop(context);
                     }
-                    Navigator.pop(context);
                   },
                   child: const Text('Save Note'),
                 ),

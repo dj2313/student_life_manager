@@ -1,26 +1,51 @@
 {
   "project_info": {
-    "project_number": "260644491609",
-    "project_id": "student-life-c187c",
-    "storage_bucket": "student-life-c187c.firebasestorage.app"
+    "project_number": "732686104757",
+    "project_id": "student-life-a9cc3",
+    "storage_bucket": "student-life-a9cc3.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:260644491609:android:3b3c4227fd7594e6fdfc48",
+        "mobilesdk_app_id": "1:732686104757:android:efed3bfcc64e49928ae6fc",
         "android_client_info": {
-          "package_name": "com.example.student_life_manager"
+          "package_name": "com.student.studentlife"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "732686104757-j57ai9ijqh54g20ve7av0lhlh87au27v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.student.studentlife",
+            "certificate_hash": "d774bf7bce2fba73fbdf2051d17e44f67c4968d3"
+          }
+        },
+        {
+          "client_id": "732686104757-mkco3lt9j3tfushqga8i45b2o470bbn3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyCG81JAglL7mnI3OARWr1IaOJEOxau7Cuw"
+          "current_key": "AIzaSyBtNkeDQbSg0PBj7ACQeCSU1WETcAYlNDM"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "732686104757-mkco3lt9j3tfushqga8i45b2o470bbn3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "732686104757-714uniop8fa8ouu42cdnr5j6ftka8vsn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.student.studentlife"
+              }
+            }
+          ]
         }
       }
     }

@@ -3,6 +3,10 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationService {
   static final NotificationService _notificationService =
@@ -16,6 +20,7 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
   bool _permissionsGranted = false;
 
@@ -29,7 +34,7 @@ class NotificationService {
     }
 
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
@@ -44,14 +49,34 @@ class NotificationService {
           iOS: initializationSettingsIOS,
         );
 
-    tz.initializeTimeZones();
+    // Dynamic Timezone detection
     try {
-      // Use Asia/Kolkata for IST as requested by the user
-      tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
-      debugPrint('Timezone set to Asia/Kolkata (IST)');
+      tz.initializeTimeZones();
+      final dynamic result = await FlutterTimezone.getLocalTimezone();
+      String timeZoneName = result.toString();
+
+      // Normalization: Handle common variations or legacy names
+      if (timeZoneName == 'Asia/Calcutta') timeZoneName = 'Asia/Kolkata';
+
+      try {
+        tz.setLocalLocation(tz.getLocation(timeZoneName));
+        debugPrint('Timezone successfully set to: $timeZoneName');
+      } catch (e) {
+        debugPrint(
+          'Timezone "$timeZoneName" not found in DB, falling back to IST (Asia/Kolkata)',
+        );
+        tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+      }
     } catch (e) {
-      debugPrint('Error initializing timezone: $e');
-      tz.setLocalLocation(tz.getLocation('UTC'));
+      debugPrint('Critical error in timezone initialization: $e');
+      // Final safety net fallbacks
+      try {
+        tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+        debugPrint('Defaulted to Asia/Kolkata after failure');
+      } catch (_) {
+        tz.setLocalLocation(tz.getLocation('UTC'));
+        debugPrint('Defaulted to UTC after double failure');
+      }
     }
 
     await flutterLocalNotificationsPlugin.initialize(
@@ -63,6 +88,45 @@ class NotificationService {
 
     // Request permissions after initialization
     await requestPermissions();
+
+    // Setup FCM
+    await _setupFCM();
+  }
+
+  Future<void> _setupFCM() async {
+    if (kIsWeb) return;
+
+    // Get the FCM token
+    String? token = await _fcm.getToken();
+    debugPrint("FCM Token: $token");
+
+    // Save token to Firestore if user is logged in
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && token != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'fcmToken': token,
+      }, SetOptions(merge: true));
+    }
+
+    // Foreground listening
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint(
+        "FCM Message Received in Foreground: ${message.notification?.title}",
+      );
+      if (message.notification != null) {
+        showNotification(
+          id: message.hashCode,
+          title: message.notification!.title ?? "New Notification",
+          body: message.notification!.body ?? "",
+        );
+      }
+    });
+
+    // Background/Terminated click handling
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint("FCM Message clicked: ${message.data}");
+      // Navigate to specific screen based on data here
+    });
   }
 
   /// Request notification permissions
@@ -76,10 +140,28 @@ class NotificationService {
 
         if (status.isPermanentlyDenied) {
           debugPrint('Notification permission permanently denied');
-          return false;
         }
       } else {
         _permissionsGranted = await Permission.notification.isGranted;
+      }
+
+      // Check for Exact Alarm permission (Android 12+)
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        try {
+          final status = await Permission.scheduleExactAlarm.status;
+          if (status.isDenied || status.isPermanentlyDenied) {
+            debugPrint('Note: Exact alarm permission not granted.');
+            await Permission.scheduleExactAlarm.request();
+          }
+
+          // Request ignoring battery optimizations for reliability
+          if (await Permission.ignoreBatteryOptimizations.isDenied) {
+            debugPrint('Requesting ignore battery optimizations...');
+            await Permission.ignoreBatteryOptimizations.request();
+          }
+        } catch (e) {
+          debugPrint('Exact alarm / battery optimize check error: $e');
+        }
       }
 
       // For iOS
@@ -125,6 +207,10 @@ class NotificationService {
     required DateTime scheduledDate,
   }) async {
     if (kIsWeb) return;
+
+    // Truncate ID to 32-bit integer to prevent Android crashes
+    final safeId = id.toSigned(31);
+
     // Check permission before scheduling
     if (!_permissionsGranted) {
       final granted = await requestPermissions();
@@ -137,33 +223,51 @@ class NotificationService {
     try {
       final scheduledTZDate = tz.TZDateTime.from(scheduledDate, tz.local);
 
-      // Ensure date is in the future
-      if (scheduledTZDate.isBefore(tz.TZDateTime.now(tz.local))) {
-        debugPrint('Skip scheduling: Date $scheduledDate is in the past');
+      // Ensure date is in the future.
+      final now = tz.TZDateTime.now(tz.local);
+
+      // Audit Debug Prints
+      debugPrint("Scheduling notification for: $scheduledDate");
+      debugPrint("Is future? ${scheduledTZDate.isAfter(now)}");
+      debugPrint("Current Local Time: $now");
+      debugPrint("Scheduled TZ Time: $scheduledTZDate");
+
+      if (scheduledTZDate.isBefore(now)) {
+        debugPrint(
+          'Skip scheduling: Date $scheduledDate is in the past (Current: $now)',
+        );
         return;
       }
 
+      debugPrint('Scheduling notification $safeId for $scheduledTZDate');
+
       await flutterLocalNotificationsPlugin.zonedSchedule(
-        id,
+        safeId,
         title,
         body,
         scheduledTZDate,
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'student_life_channel',
             'Student Life Notifications',
             channelDescription: 'Notifications for tasks and notes',
             importance: Importance.max,
             priority: Priority.high,
+            ticker: 'ticker',
             showWhen: true,
+            styleInformation: BigTextStyleInformation(body),
           ),
-          iOS: DarwinNotificationDetails(),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.time,
       );
+      debugPrint('Notification $safeId scheduled successfully.');
     } catch (e) {
       debugPrint('Error scheduling notification: $e');
     }

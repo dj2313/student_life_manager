@@ -40,9 +40,6 @@ class TasksProvider with ChangeNotifier {
 
   Future<void> _init() async {
     try {
-      if (_auth.currentUser == null) {
-        await _auth.signInAnonymously();
-      }
       await fetchTasks();
     } catch (e) {
       debugPrint('TasksProvider Initialization Error: $e');
@@ -133,11 +130,19 @@ class TasksProvider with ChangeNotifier {
           .set(task.toJson());
 
       if (task.shouldNotify) {
+        // Show an immediate confirmation notification
+        await _notificationService.showNotification(
+          id: task.id.hashCode + 10000,
+          title: '✅ Task Scheduled',
+          body:
+              '"${task.title}" reminder set for ${task.dueDate.hour.toString().padLeft(2, '0')}:${task.dueDate.minute.toString().padLeft(2, '0')}',
+        );
+        // Schedule the actual reminder at the task's due date/time
         await _notificationService.scheduleNotification(
           id: task.id.hashCode,
-          title: "Task Reminder: ${task.title}",
-          body: "Don't forget to complete your task!",
-          scheduledDate: DateTime.now().add(const Duration(hours: 1)),
+          title: '⏰ Task Due: ${task.title}',
+          body: "Your task is due now! Don't forget to complete it.",
+          scheduledDate: task.dueDate,
         );
       }
 
@@ -212,6 +217,43 @@ class TasksProvider with ChangeNotifier {
     addTask(newTask);
   }
 
+  Future<void> updateTask(Todo updatedTask) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('tasks')
+          .doc(updatedTask.id)
+          .update(updatedTask.toJson());
+
+      // Cancel any existing notification for this task
+      await _notificationService.cancelNotification(updatedTask.id.hashCode);
+
+      if (updatedTask.shouldNotify) {
+        await _notificationService.showNotification(
+          id: updatedTask.id.hashCode + 10000,
+          title: '✅ Task Reminder Updated',
+          body:
+              '"${updatedTask.title}" reminder rescheduled for ${updatedTask.dueDate.hour.toString().padLeft(2, '0')}:${updatedTask.dueDate.minute.toString().padLeft(2, '0')}',
+        );
+        await _notificationService.scheduleNotification(
+          id: updatedTask.id.hashCode,
+          title: '⏰ Task Due: ${updatedTask.title}',
+          body: "Your task is due now! Don't forget to complete it.",
+          scheduledDate: updatedTask.dueDate,
+        );
+      }
+
+      final index = _tasks.indexWhere((t) => t.id == updatedTask.id);
+      if (index != -1) {
+        _tasks[index] = updatedTask;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error updating task: $e');
+    }
+  }
+
   Future<void> deleteTask(String id) async {
     try {
       await _firestore
@@ -220,6 +262,8 @@ class TasksProvider with ChangeNotifier {
           .collection('tasks')
           .doc(id)
           .delete();
+      // Cancel any scheduled notification
+      await _notificationService.cancelNotification(id.hashCode);
       _tasks.removeWhere((task) => task.id == id);
       notifyListeners();
     } catch (e) {

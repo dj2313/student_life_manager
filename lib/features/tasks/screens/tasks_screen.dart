@@ -12,6 +12,7 @@ import '../providers/tasks_provider.dart';
 import '../../../core/utils/context_extensions.dart';
 import './calendar_screen.dart';
 import '../../../data/models/todo.dart';
+import '../../../core/widgets/premium_empty_state.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -397,11 +398,13 @@ class _TasksScreenState extends State<TasksScreen>
     TasksProvider provider,
   ) {
     if (tasks.isEmpty) {
-      return Center(
-        child: Text(
-          'No tasks available',
-          style: GoogleFonts.inter(color: AppColors.textSecondaryLight),
-        ),
+      return PremiumEmptyState(
+        icon: Icons.assignment_turned_in_outlined,
+        title: 'Clear Horizon',
+        subtitle:
+            'You have no active objectives for this period. Time to plan something new?',
+        actionLabel: 'Add Objective',
+        onActionPressed: () => _showAddTaskBottomSheet(context, provider),
       );
     }
 

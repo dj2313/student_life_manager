@@ -11,37 +11,34 @@ class BureaucracyProvider with ChangeNotifier {
 
   List<BureaucracyTask> get tasks => _tasks;
   bool get isLoading => _isLoading;
-  String get _uid => _auth.currentUser?.uid ?? 'guest_user';
+  String? get _uid => _auth.currentUser?.uid;
 
   BureaucracyProvider() {
     fetchData();
   }
 
   Future<void> fetchData() async {
+    final uid = _uid;
+    if (uid == null) return;
+
     _isLoading = true;
     notifyListeners();
 
     try {
       final snapshot = await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('bureaucracy_tasks')
           .orderBy('createdAt', descending: false)
           .get();
 
       if (snapshot.docs.isNotEmpty) {
-        _tasks = snapshot.docs.map((doc) => BureaucracyTask.fromJson(doc.data())).toList();
+        _tasks = snapshot.docs
+            .map((doc) => BureaucracyTask.fromJson(doc.data()))
+            .toList();
       } else {
         _loadInitialTasks();
-        // Save initial tasks to Firestore
-        for (final task in _tasks) {
-          await _firestore
-              .collection('users')
-              .doc(_uid)
-              .collection('bureaucracy_tasks')
-              .doc(task.id)
-              .set(task.toJson());
-        }
+        // Removed auto-save to Firestore here to keep DB clean for new users
       }
     } catch (e) {
       debugPrint('Error fetching bureaucracy tasks: $e');
@@ -57,34 +54,48 @@ class BureaucracyProvider with ChangeNotifier {
       BureaucracyTask(
         id: '1',
         title: 'City Registration (Anmeldung)',
-        description: 'Register your address at the Burgeramt within 14 days of arrival.',
+        description:
+            'Register your address at the Burgeramt within 14 days of arrival.',
         category: 'Legal',
-        requiredDocuments: ['Passport', 'Rental Agreement (Wohnungsgeberbestätigung)'],
+        requiredDocuments: [
+          'Passport',
+          'Rental Agreement (Wohnungsgeberbestätigung)',
+        ],
       ),
       BureaucracyTask(
         id: '2',
         title: 'Health Insurance',
-        description: 'Activate your health insurance (TK, AOK, etc.) for enrollment.',
+        description:
+            'Activate your health insurance (TK, AOK, etc.) for enrollment.',
         category: 'Health',
         requiredDocuments: ['Passport', 'Zulassungsbescheinigung'],
       ),
       BureaucracyTask(
         id: '3',
         title: 'Residence Permit',
-        description: 'Apply for your study residence permit at the Ausländerbehörde.',
+        description:
+            'Apply for your study residence permit at the Ausländerbehörde.',
         category: 'Immigration',
-        requiredDocuments: ['Proof of Funds', 'Insurance', 'Passport', 'Photos'],
+        requiredDocuments: [
+          'Proof of Funds',
+          'Insurance',
+          'Passport',
+          'Photos',
+        ],
       ),
       BureaucracyTask(
         id: '4',
         title: 'Bank Account / Blocked Account',
-        description: 'Activate your blocked account and open a local Sparkasse/N26 account.',
+        description:
+            'Activate your blocked account and open a local Sparkasse/N26 account.',
         category: 'Finance',
       ),
     ];
   }
 
   Future<void> updateTaskStatus(String id, BureaucracyStatus status) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       final index = _tasks.indexWhere((t) => t.id == id);
       if (index != -1) {
@@ -94,7 +105,7 @@ class BureaucracyProvider with ChangeNotifier {
 
         await _firestore
             .collection('users')
-            .doc(_uid)
+            .doc(uid)
             .collection('bureaucracy_tasks')
             .doc(id)
             .update({'status': status.name});
@@ -105,10 +116,12 @@ class BureaucracyProvider with ChangeNotifier {
   }
 
   Future<void> addTask(BureaucracyTask task) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('bureaucracy_tasks')
           .doc(task.id)
           .set(task.toJson());

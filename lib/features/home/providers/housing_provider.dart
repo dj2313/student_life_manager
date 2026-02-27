@@ -13,7 +13,7 @@ class HousingProvider with ChangeNotifier {
   List<HousingApplication> get applications => _applications;
   List<HousingDeposit> get deposits => _deposits;
 
-  String get _uid => _auth.currentUser?.uid ?? 'guest_user';
+  String? get _uid => _auth.currentUser?.uid;
 
   HousingProvider() {
     _init();
@@ -24,10 +24,13 @@ class HousingProvider with ChangeNotifier {
   }
 
   Future<void> fetchHousingData() async {
+    final uid = _uid;
+    if (uid == null) return;
+
     try {
       final appSnapshot = await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('housing_applications')
           .orderBy('appliedDate', descending: true)
           .get();
@@ -38,7 +41,7 @@ class HousingProvider with ChangeNotifier {
 
       final depositSnapshot = await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('housing_deposits')
           .orderBy('datePaid', descending: true)
           .get();
@@ -81,12 +84,13 @@ class HousingProvider with ChangeNotifier {
     ];
     notifyListeners();
   }
-
   Future<void> addApplication(HousingApplication app) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       final docRef = await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('housing_applications')
           .add(app.toJson());
 
@@ -110,10 +114,12 @@ class HousingProvider with ChangeNotifier {
   }
 
   Future<void> updateApplicationStatus(String id, String status) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('housing_applications')
           .doc(id)
           .update({'status': status});
@@ -136,12 +142,13 @@ class HousingProvider with ChangeNotifier {
       debugPrint('Error updating application status: $e');
     }
   }
-
   Future<void> addDeposit(HousingDeposit deposit) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       final docRef = await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('housing_deposits')
           .add(deposit.toJson());
 
@@ -166,10 +173,12 @@ class HousingProvider with ChangeNotifier {
     final index = _deposits.indexWhere((d) => d.id == id);
     if (index != -1) {
       final newValue = !_deposits[index].isReturned;
+      final uid = _uid;
+      if (uid == null) return;
       try {
         await _firestore
             .collection('users')
-            .doc(_uid)
+            .doc(uid)
             .collection('housing_deposits')
             .doc(id)
             .update({'isReturned': newValue});

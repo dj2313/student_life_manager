@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class CurrencyService {
   static final CurrencyService _instance = CurrencyService._internal();
@@ -7,6 +8,9 @@ class CurrencyService {
   CurrencyService._internal();
 
   final Dio _dio = Dio();
+  static const String _boxName = 'currency_box';
+  static const String _ratesKey = 'rates';
+  static const String _lastUpdatedKey = 'last_updated';
 
   // Free API - no key required for basic usage
   // Alternative: https://open.er-api.com/v6/latest/EUR
@@ -15,6 +19,25 @@ class CurrencyService {
   Map<String, double> _cachedRates = {};
   DateTime? _lastUpdated;
   String _baseCurrency = 'EUR';
+
+  Future<void> init() async {
+    final box = await Hive.openBox(_boxName);
+    final savedRates = box.get(_ratesKey);
+    if (savedRates != null) {
+      _cachedRates = Map<String, double>.from(
+        savedRates.map(
+          (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
+        ),
+      );
+    }
+    final savedDate = box.get(_lastUpdatedKey);
+    if (savedDate != null) {
+      _lastUpdated = DateTime.parse(savedDate);
+    }
+    debugPrint(
+      '🏦 CurrencyService initialized. Cached rates: ${_cachedRates.length}',
+    );
+  }
 
   // Getters
   Map<String, double> get rates => _cachedRates;
@@ -40,7 +63,14 @@ class CurrencyService {
         _cachedRates = rates;
         _lastUpdated = DateTime.now();
 
-        debugPrint('✅ Currency rates updated: ${rates.length} currencies');
+        // Save to Hive
+        final box = await Hive.openBox(_boxName);
+        await box.put(_ratesKey, rates);
+        await box.put(_lastUpdatedKey, _lastUpdated!.toIso8601String());
+
+        debugPrint(
+          '✅ Currency rates updated and cached: ${rates.length} currencies',
+        );
         return rates;
       } else {
         debugPrint('❌ Failed to fetch rates: ${response.statusCode}');

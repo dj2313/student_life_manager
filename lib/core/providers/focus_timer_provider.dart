@@ -1,10 +1,23 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class FocusTimerProvider with ChangeNotifier {
   Timer? _timer;
   int _secondsRemaining = 25 * 60;
   bool _isRunning = false;
+  static const String _boxName = 'focus_timer_box';
+  static const String _secondsKey = 'seconds_remaining';
+
+  FocusTimerProvider() {
+    _init();
+  }
+
+  Future<void> _init() async {
+    final box = await Hive.openBox(_boxName);
+    _secondsRemaining = box.get(_secondsKey, defaultValue: 25 * 60);
+    notifyListeners();
+  }
 
   int get secondsRemaining => _secondsRemaining;
   bool get isRunning => _isRunning;
@@ -20,9 +33,11 @@ class FocusTimerProvider with ChangeNotifier {
   void startTimer() {
     if (_isRunning) return;
     _isRunning = true;
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (_secondsRemaining > 0) {
         _secondsRemaining--;
+        final box = await Hive.openBox(_boxName);
+        await box.put(_secondsKey, _secondsRemaining);
         notifyListeners();
       } else {
         stopTimer();
@@ -37,9 +52,11 @@ class FocusTimerProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void resetTimer() {
+  void resetTimer() async {
     stopTimer();
     _secondsRemaining = 25 * 60;
+    final box = await Hive.openBox(_boxName);
+    await box.put(_secondsKey, _secondsRemaining);
     notifyListeners();
   }
 

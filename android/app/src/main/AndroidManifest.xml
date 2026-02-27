@@ -3,6 +3,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- USE_EXACT_ALARM is needed on Android 13+ (API 33+) for exact alarms without user prompt -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -45,7 +47,8 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <receiver android:exported="false" android:name="com.dexterous.flutter_local_notifications.ScheduledNotificationReceiver" />
+        <!-- exported=true is REQUIRED so AlarmManager can trigger this receiver to deliver scheduled notifications -->
+        <receiver android:exported="true" android:name="com.dexterous.flutter_local_notifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutter_local_notifications.ScheduledNotificationBootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>

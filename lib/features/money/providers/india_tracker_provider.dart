@@ -15,13 +15,16 @@ class IndiaTrackerProvider with ChangeNotifier {
   List<IndiaTravelExpense> get travelExpenses => _travelExpenses;
   bool get isLoading => _isLoading;
 
-  String get _uid => _auth.currentUser?.uid ?? 'guest_user';
+  String? get _uid => _auth.currentUser?.uid;
 
   IndiaTrackerProvider() {
     fetchData();
   }
 
   Future<void> fetchData() async {
+    final uid = _uid;
+    if (uid == null) return;
+
     _isLoading = true;
     notifyListeners();
 
@@ -29,7 +32,7 @@ class IndiaTrackerProvider with ChangeNotifier {
       // Fetch Items
       final itemsSnapshot = await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('india_items')
           .get();
 
@@ -43,7 +46,7 @@ class IndiaTrackerProvider with ChangeNotifier {
       // Fetch Travel Expenses
       final expensesSnapshot = await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('india_travel_expenses')
           .orderBy('date', descending: true)
           .get();
@@ -62,10 +65,12 @@ class IndiaTrackerProvider with ChangeNotifier {
   }
 
   Future<void> addItem(IndiaItem item) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('india_items')
           .doc(item.id)
           .set(item.toJson());
@@ -78,10 +83,12 @@ class IndiaTrackerProvider with ChangeNotifier {
   }
 
   Future<void> updateItem(IndiaItem item) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('india_items')
           .doc(item.id)
           .update(item.toJson());
@@ -98,10 +105,12 @@ class IndiaTrackerProvider with ChangeNotifier {
   }
 
   Future<void> deleteItem(String id) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('india_items')
           .doc(id)
           .delete();
@@ -113,10 +122,12 @@ class IndiaTrackerProvider with ChangeNotifier {
   }
 
   Future<void> addTravelExpense(IndiaTravelExpense expense) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('india_travel_expenses')
           .doc(expense.id)
           .set(expense.toJson());
@@ -129,10 +140,12 @@ class IndiaTrackerProvider with ChangeNotifier {
   }
 
   Future<void> updateTravelExpense(IndiaTravelExpense expense) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('india_travel_expenses')
           .doc(expense.id)
           .update(expense.toJson());
@@ -149,10 +162,12 @@ class IndiaTrackerProvider with ChangeNotifier {
   }
 
   Future<void> deleteTravelExpense(String id) async {
+    final uid = _uid;
+    if (uid == null) return;
     try {
       await _firestore
           .collection('users')
-          .doc(_uid)
+          .doc(uid)
           .collection('india_travel_expenses')
           .doc(id)
           .delete();

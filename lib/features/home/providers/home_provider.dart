@@ -3,23 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../data/models/ticket.dart';
 
-class BureaucracyTask {
-  final String title;
-  final bool isCompleted;
-  final IconData icon;
-
-  BureaucracyTask({
-    required this.title,
-    required this.isCompleted,
-    required this.icon,
-  });
-}
-
 class HomeProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  dynamic _authSubscription;
+  dynamic _userDocumentSubscription;
 
-  String _userName = 'Student User';
+  String _userName = 'Student';
   DateTime? _visaExpiryDate;
   String? _visaDocumentUrl;
 
@@ -30,11 +20,14 @@ class HomeProvider extends ChangeNotifier {
   final IconData _weatherIcon = Icons.cloud_queue_rounded;
 
   List<Ticket> _activeTickets = [];
-  List<BureaucracyTask> _bureaucracyTasks = [];
+  bool _notificationsEnabled = true;
+  bool _remindersEnabled = true;
 
   String get userName => _userName;
   DateTime? get visaExpiryDate => _visaExpiryDate;
   String? get visaDocumentUrl => _visaDocumentUrl;
+  bool get notificationsEnabled => _notificationsEnabled;
+  bool get remindersEnabled => _remindersEnabled;
 
   String get visaStatus {
     if (_visaExpiryDate == null) return 'Not Set';
@@ -51,7 +44,6 @@ class HomeProvider extends ChangeNotifier {
   }
 
   List<Ticket> get activeTickets => _activeTickets;
-  List<BureaucracyTask> get bureaucracyTasks => _bureaucracyTasks;
 
   String get locationName => _locationName;
   String get temperature => _temperature;
@@ -62,13 +54,52 @@ class HomeProvider extends ChangeNotifier {
 
   HomeProvider() {
     _init();
+    _authSubscription = _auth.authStateChanges().listen((user) {
+      _userDocumentSubscription?.cancel();
+      if (user != null) {
+        // Set initial name from Auth while waiting for Firestore
+        _userName = user.displayName ?? 'Student';
+        notifyListeners();
+        _listenToUserDocument(user.uid);
+      } else {
+        _userName = 'Guest';
+        _visaExpiryDate = null;
+        notifyListeners();
+      }
+    });
+  }
+
+  void _listenToUserDocument(String uid) {
+    _userDocumentSubscription = _firestore
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .listen((doc) {
+          if (doc.exists && doc.data() != null) {
+            final data = doc.data()!;
+            _userName =
+                data['name'] ?? _auth.currentUser?.displayName ?? 'Student';
+            _locationName = data['location'] ?? 'Berlin';
+            if (data['visaExpiryDate'] != null) {
+              _visaExpiryDate = (data['visaExpiryDate'] as Timestamp).toDate();
+            }
+            _visaDocumentUrl = data['visaDocumentUrl'];
+            _notificationsEnabled = data['notificationsEnabled'] ?? true;
+            _remindersEnabled = data['remindersEnabled'] ?? true;
+            notifyListeners();
+          }
+        });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    _userDocumentSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _init() async {
     try {
-      if (_auth.currentUser == null) {
-        await _auth.signInAnonymously();
-      }
       await fetchUserData();
     } catch (e) {
       debugPrint('HomeProvider Initialization Error: $e');
@@ -81,17 +112,19 @@ class HomeProvider extends ChangeNotifier {
       final doc = await _firestore.collection('users').doc(_uid).get();
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
-        _userName = data['name'] ?? 'Student User';
+        _userName = data['name'] ?? _auth.currentUser?.displayName ?? 'Student';
         _locationName = data['location'] ?? 'Berlin';
         if (data['visaExpiryDate'] != null) {
           _visaExpiryDate = (data['visaExpiryDate'] as Timestamp).toDate();
         }
         _visaDocumentUrl = data['visaDocumentUrl'];
+        _notificationsEnabled = data['notificationsEnabled'] ?? true;
+        _remindersEnabled = data['remindersEnabled'] ?? true;
+
         notifyListeners();
       }
 
-      // For now, if lists are empty, load mock data to ensure visibility
-      if (_bureaucracyTasks.isEmpty || _activeTickets.isEmpty) {
+      if (_activeTickets.isEmpty) {
         _loadMockData();
       }
     } catch (e) {
@@ -149,6 +182,30 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateNotificationsEnabled(bool value) async {
+    try {
+      _notificationsEnabled = value;
+      await _firestore.collection('users').doc(_uid).set({
+        'notificationsEnabled': value,
+      }, SetOptions(merge: true));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating notifications status: $e');
+    }
+  }
+
+  Future<void> updateRemindersEnabled(bool value) async {
+    try {
+      _remindersEnabled = value;
+      await _firestore.collection('users').doc(_uid).set({
+        'remindersEnabled': value,
+      }, SetOptions(merge: true));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating reminders status: $e');
+    }
+  }
+
   void _loadMockData() {
     _activeTickets = [
       Ticket(
@@ -161,31 +218,6 @@ class HomeProvider extends ChangeNotifier {
       ),
     ];
 
-    _bureaucracyTasks = [
-      BureaucracyTask(
-        title: 'Anmeldung',
-        isCompleted: true,
-        icon: Icons.home_work_outlined,
-      ),
-      BureaucracyTask(
-        title: 'TK Insurance',
-        isCompleted: false,
-        icon: Icons.health_and_safety_outlined,
-      ),
-    ];
-
     notifyListeners();
-  }
-
-  void toggleBureaucracyTask(int index) {
-    if (index >= 0 && index < _bureaucracyTasks.length) {
-      final task = _bureaucracyTasks[index];
-      _bureaucracyTasks[index] = BureaucracyTask(
-        title: task.title,
-        isCompleted: !task.isCompleted,
-        icon: task.icon,
-      );
-      notifyListeners();
-    }
   }
 }

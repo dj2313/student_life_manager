@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../../../core/constants/app_colors.dart';
 import '../providers/money_provider.dart';
 import '../../../data/models/expense.dart';
@@ -17,6 +16,9 @@ import '../providers/job_provider.dart';
 
 import './job_tracker_screen.dart';
 import '../../../core/utils/context_extensions.dart';
+import '../../../core/widgets/premium_empty_state.dart';
+import '../../../core/services/csv_export_service.dart';
+import '../../../core/widgets/premium_shimmer.dart';
 
 class MoneyDashboard extends StatefulWidget {
   const MoneyDashboard({super.key});
@@ -37,7 +39,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                _buildSliverAppBar(context),
+                _buildSliverAppBar(context, moneyProvider),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -71,7 +73,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context) {
+  Widget _buildSliverAppBar(BuildContext context, MoneyProvider provider) {
     return SliverAppBar(
       expandedHeight: 60.h,
       backgroundColor: Colors.transparent,
@@ -89,6 +91,14 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
       actions: [
         IconButton(
           icon: Icon(
+            Icons.file_download_outlined,
+            color: Theme.of(context).colorScheme.primary,
+            size: 22.sp,
+          ),
+          onPressed: () => CSVExportService.exportExpenses(provider.expenses),
+        ),
+        IconButton(
+          icon: Icon(
             Icons.tune_rounded,
             color: Theme.of(context).colorScheme.primary,
             size: 22.sp,
@@ -104,6 +114,16 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     BuildContext context,
     MoneyProvider provider,
   ) {
+    if (provider.isLoading) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: PremiumShimmer(
+          width: double.infinity,
+          height: 180.h,
+          borderRadius: 28,
+        ),
+      );
+    }
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final spending = provider.getMonthlySpending();
     const budget = 600.0;
@@ -449,6 +469,15 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
   }
 
   Widget _buildAccountsSection(BuildContext context, MoneyProvider provider) {
+    if (provider.isLoading) {
+      return Column(
+        children: [
+          PremiumShimmer(width: double.infinity, height: 80.h),
+          SizedBox(height: 12.h),
+          PremiumShimmer(width: double.infinity, height: 80.h),
+        ],
+      );
+    }
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -733,8 +762,9 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
   }) {
     final descController = TextEditingController(text: expense?.description);
     final amountController = TextEditingController(
-      text: expense?.amount.toString(),
+      text: expense?.amount == 0 ? '' : expense?.amount.toString(),
     );
+    final formKey = GlobalKey<FormState>();
     DateTime selectedDate = expense?.date ?? DateTime.now();
     String selectedCategory = expense?.category ?? 'Food';
     bool isBlocked = expense?.isBlockedAccount ?? false;
@@ -832,15 +862,44 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                 ),
               ),
               SizedBox(height: 16.h),
-              TextField(
-                controller: descController,
-                decoration: const InputDecoration(labelText: 'Description'),
-              ),
-              SizedBox(height: 16.h),
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Amount (€)'),
+              Form(
+                key: formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: descController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter a description';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 16.h),
+                    TextFormField(
+                      controller: amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Amount (€)',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter an amount';
+                        }
+                        final amount = double.tryParse(value);
+                        if (amount == null || amount <= 0) {
+                          return 'Please enter a valid amount > 0';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: 16.h),
               DropdownButtonFormField<String>(
@@ -882,8 +941,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                 height: 56.h,
                 child: ElevatedButton(
                   onPressed: () {
-                    if (descController.text.isNotEmpty &&
-                        amountController.text.isNotEmpty) {
+                    if (formKey.currentState!.validate()) {
                       final newExpense = Expense(
                         id: expense?.id ?? const Uuid().v4(),
                         description: descController.text,
@@ -1123,19 +1181,13 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
         ),
         SizedBox(height: 16.h),
         if (provider.expenses.isEmpty)
-          Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 20.h),
-              child: Text(
-                'No recorded transactions',
-                style: GoogleFonts.inter(
-                  fontSize: 13.sp,
-                  color: isDark
-                      ? AppColors.textTertiaryDark
-                      : AppColors.textTertiaryLight,
-                ),
-              ),
-            ),
+          PremiumEmptyState(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'No Settlements',
+            subtitle:
+                'You haven\'t recorded any expenses yet. Start tracking to see your analytics.',
+            actionLabel: 'Record Expense',
+            onActionPressed: () => _showAddExpenseDialog(context, provider),
           )
         else
           ...provider.expenses.take(5).map((expense) {

@@ -21,7 +21,7 @@ class MoneyProvider with ChangeNotifier {
   double _totalBalance = 2450.00;
   double _blockedAccountBalance = 11208.00;
   double _eurToInrRate = 89.50;
-  final bool _isLoading = false;
+  bool _isLoading = false;
   bool _isRefreshingRates = false;
 
   // Multi-currency support
@@ -57,13 +57,12 @@ class MoneyProvider with ChangeNotifier {
   }
 
   Future<void> _init() async {
+    _isLoading = true;
+    notifyListeners();
     try {
       // Load saved currency preference
       await _loadCurrencyPreference();
 
-      if (_auth.currentUser == null) {
-        await _auth.signInAnonymously();
-      }
       await Future.wait([
         fetchBalances(),
         fetchExpenses(),
@@ -73,6 +72,9 @@ class MoneyProvider with ChangeNotifier {
       ]);
     } catch (e) {
       debugPrint('MoneyProvider Initialization Error: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
