@@ -81,6 +81,7 @@ dependencies:
   # Image
   image_picker: ^1.1.2
   cached_network_image: ^3.4.1
+  google_mlkit_text_recognition: ^0.14.0
   
   # Utilities
   share_plus: ^10.1.1

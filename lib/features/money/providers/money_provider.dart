@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/expense.dart';
 import '../../../data/models/loan.dart';
 import '../../../data/models/grocery.dart';
+import '../../../data/models/subscription.dart';
 import '../../../core/services/currency_service.dart';
 
 class MoneyProvider with ChangeNotifier {
@@ -17,10 +18,12 @@ class MoneyProvider with ChangeNotifier {
   List<Expense> _expenses = [];
   List<Loan> _loans = [];
   List<Grocery> _groceries = [];
+  List<Subscription> _subscriptions = [];
 
   double _totalBalance = 2450.00;
   double _blockedAccountBalance = 11208.00;
   double _eurToInrRate = 89.50;
+  double _monthlyBudget = 600.00;
   bool _isLoading = false;
   bool _isRefreshingRates = false;
 
@@ -31,6 +34,7 @@ class MoneyProvider with ChangeNotifier {
   List<Expense> get expenses => _expenses;
   List<Loan> get loans => _loans;
   List<Grocery> get groceries => _groceries;
+  List<Subscription> get subscriptions => _subscriptions;
   bool get isLoading => _isLoading;
   bool get isRefreshingRates => _isRefreshingRates;
 
@@ -38,6 +42,7 @@ class MoneyProvider with ChangeNotifier {
   double get blockedAccountBalance => _blockedAccountBalance;
   double get eurToInrRate => _eurToInrRate;
   double get inrToEurRate => 1.0 / _eurToInrRate;
+  double get monthlyBudget => _monthlyBudget;
 
   String get selectedCurrency => _selectedCurrency;
   String get baseCurrency => _baseCurrency;
@@ -68,6 +73,7 @@ class MoneyProvider with ChangeNotifier {
         fetchExpenses(),
         fetchLoans(),
         fetchGroceries(),
+        fetchSubscriptions(),
         refreshCurrencyRates(),
       ]);
     } catch (e) {
@@ -107,6 +113,7 @@ class MoneyProvider with ChangeNotifier {
         final data = doc.data()!;
         _totalBalance = (data['personalBalance'] ?? 2450.0).toDouble();
         _blockedAccountBalance = (data['blockedBalance'] ?? 11208.0).toDouble();
+        _monthlyBudget = (data['monthlyBudget'] ?? 600.0).toDouble();
         notifyListeners();
       }
     } catch (e) {
@@ -185,6 +192,24 @@ class MoneyProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching groceries: $e');
+    }
+  }
+
+  Future<void> fetchSubscriptions() async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('subscriptions')
+          .orderBy('nextRenewal', descending: false)
+          .get();
+
+      _subscriptions = snapshot.docs
+          .map((doc) => Subscription.fromJson(doc.data()))
+          .toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching subscriptions: $e');
     }
   }
 
@@ -405,5 +430,79 @@ class MoneyProvider with ChangeNotifier {
           (summary[expense.category] ?? 0.0) + expense.amount;
     }
     return summary;
+  }
+
+  // Budget Forecasting
+  double get averageDailySpending {
+    if (_expenses.isEmpty) return 0.0;
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month, 1);
+    final daysPassed = now.difference(monthStart).inDays + 1;
+    final monthlySpending = getMonthlySpending();
+    return monthlySpending / daysPassed;
+  }
+
+  double get forecastedBalanceEndMonth {
+    final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final daysRemaining = daysInMonth - now.day;
+    final estimatedRemainingSpend = averageDailySpending * daysRemaining;
+
+    // Add upcoming subscriptions for this month
+    double upcomingSubs = 0;
+    for (var sub in _subscriptions) {
+      if (sub.isActive &&
+          sub.nextRenewal.month == now.month &&
+          sub.nextRenewal.day > now.day) {
+        upcomingSubs += sub.amount;
+      }
+    }
+
+    return _totalBalance - estimatedRemainingSpend - upcomingSubs;
+  }
+
+  Future<void> addSubscription(Subscription subscription) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('subscriptions')
+          .doc(subscription.id)
+          .set(subscription.toJson());
+
+      _subscriptions.add(subscription);
+      _subscriptions.sort((a, b) => a.nextRenewal.compareTo(b.nextRenewal));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error adding subscription: $e');
+    }
+  }
+
+  Future<void> deleteSubscription(String id) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('subscriptions')
+          .doc(id)
+          .delete();
+
+      _subscriptions.removeWhere((s) => s.id == id);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error deleting subscription: $e');
+    }
+  }
+
+  Future<void> updateMonthlyBudget(double budget) async {
+    try {
+      _monthlyBudget = budget;
+      await _firestore.collection('users').doc(_uid).set({
+        'monthlyBudget': budget,
+      }, SetOptions(merge: true));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating monthly budget: $e');
+    }
   }
 }

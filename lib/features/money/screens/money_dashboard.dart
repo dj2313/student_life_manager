@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -13,12 +15,14 @@ import 'groceries_screen.dart';
 import 'blocked_account_screen.dart';
 import '../widgets/live_currency_converter.dart';
 import '../providers/job_provider.dart';
+import '../../../data/models/subscription.dart';
 
 import './job_tracker_screen.dart';
 import '../../../core/utils/context_extensions.dart';
 import '../../../core/widgets/premium_empty_state.dart';
 import '../../../core/services/csv_export_service.dart';
 import '../../../core/widgets/premium_shimmer.dart';
+import '../../../core/services/ocr_service.dart';
 
 class MoneyDashboard extends StatefulWidget {
   const MoneyDashboard({super.key});
@@ -54,6 +58,8 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                         _buildIndiaTrackerCard(context),
                         SizedBox(height: 40.h),
                         _buildSpendingAnalytics(context, moneyProvider),
+                        SizedBox(height: 40.h),
+                        _buildSubscriptionSection(context, moneyProvider),
                         SizedBox(height: 40.h),
                         _buildJobTrackerSection(context),
                         SizedBox(height: 40.h),
@@ -126,7 +132,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     }
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final spending = provider.getMonthlySpending();
-    const budget = 600.0;
+    final budget = provider.monthlyBudget;
     final rawRatio = budget > 0 ? spending / budget : 0.0;
     final ratio = rawRatio.isFinite ? rawRatio : 0.0;
 
@@ -193,10 +199,47 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                         ),
                       ],
                     ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'FORECAST END OF MONTH: €${provider.forecastedBalanceEndMonth.toStringAsFixed(2)}',
+                      style: GoogleFonts.inter(
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        color: provider.forecastedBalanceEndMonth < 200
+                            ? AppColors.error
+                            : AppColors.success,
+                      ),
+                    ),
                   ],
                 ),
                 _buildBudgetMiniCircle(ratio, isDark),
               ],
+            ),
+          ),
+          // Add budget settings action
+          InkWell(
+            onTap: () => _showBudgetEditDialog(context, provider),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.edit_note_rounded,
+                    size: 14.sp,
+                    color: AppColors.secondary,
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    'ADJUST MONTHLY TARGET',
+                    style: GoogleFonts.inter(
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Container(
@@ -349,7 +392,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
               'SCAN',
               AppColors.secondary,
               isDark,
-              () => _simulateScan(context, provider),
+              () => _handleReceiptScan(context, provider),
             ),
             SizedBox(width: 12.w),
             _buildActionChip(
@@ -1072,6 +1115,309 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     );
   }
 
+  void _showBudgetEditDialog(BuildContext context, MoneyProvider provider) {
+    final controller = TextEditingController(
+      text: provider.monthlyBudget.toStringAsFixed(0),
+    );
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Set Monthly Budget',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+        ),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Target Spending (€)',
+            prefixIcon: Icon(Icons.euro),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final val = double.tryParse(controller.text) ?? 600.0;
+              provider.updateMonthlyBudget(val);
+              Navigator.pop(context);
+            },
+            child: const Text('SAVE'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionSection(
+    BuildContext context,
+    MoneyProvider provider,
+  ) {
+    if (provider.isLoading) {
+      return PremiumShimmer(width: double.infinity, height: 120.h);
+    }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'RECURRING SUBSCRIPTIONS',
+              style: GoogleFonts.inter(
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+                color: isDark
+                    ? AppColors.textTertiaryDark
+                    : AppColors.textTertiaryLight,
+              ),
+            ),
+            GestureDetector(
+              onTap: () => _showAddSubscriptionDialog(context, provider),
+              child: Text(
+                'ADD NEW',
+                style: GoogleFonts.inter(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.secondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 16.h),
+        if (provider.subscriptions.isEmpty)
+          Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 20.h),
+              child: Text(
+                'No active subscriptions',
+                style: GoogleFonts.inter(
+                  fontSize: 12.sp,
+                  color: isDark
+                      ? AppColors.textTertiaryDark
+                      : AppColors.textTertiaryLight,
+                ),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 100.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: provider.subscriptions.length,
+              separatorBuilder: (context, index) => SizedBox(width: 12.w),
+              itemBuilder: (context, index) {
+                final sub = provider.subscriptions[index];
+                return GestureDetector(
+                  onLongPress: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Stop Tracking?'),
+                        content: Text('Remove ${sub.name} from subscriptions?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('CANCEL'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              provider.deleteSubscription(sub.id);
+                              Navigator.pop(context);
+                            },
+                            child: const Text(
+                              'DELETE',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 160.w,
+                    padding: EdgeInsets.all(16.w),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                sub.name,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.primary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Icon(
+                              _getCategoryIcon(sub.category),
+                              size: 14.sp,
+                              color: AppColors.secondary,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          '€${sub.amount.toStringAsFixed(2)} / ${sub.frequency}',
+                          style: GoogleFonts.outfit(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.secondary,
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          'Next: ${DateFormat('MMM dd').format(sub.nextRenewal)}',
+                          style: GoogleFonts.inter(
+                            fontSize: 10.sp,
+                            color: isDark
+                                ? AppColors.textTertiaryDark
+                                : AppColors.textTertiaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _showAddSubscriptionDialog(
+    BuildContext context,
+    MoneyProvider provider,
+  ) {
+    final nameController = TextEditingController();
+    final amountController = TextEditingController();
+    String selectedCategory = 'Entertainment';
+    String selectedFrequency = 'Monthly';
+    DateTime selectedDate = DateTime.now().add(const Duration(days: 30));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'TRACK NEW SUBSCRIPTION',
+                style: GoogleFonts.outfit(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Subscription Name (e.g. Netflix)',
+                ),
+              ),
+              SizedBox(height: 16.h),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Amount (€)'),
+              ),
+              SizedBox(height: 16.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      items:
+                          ['Entertainment', 'Education', 'Gym', 'Tool', 'Misc']
+                              .map(
+                                (c) =>
+                                    DropdownMenuItem(value: c, child: Text(c)),
+                              )
+                              .toList(),
+                      onChanged: (v) =>
+                          setModalState(() => selectedCategory = v!),
+                      decoration: const InputDecoration(labelText: 'Category'),
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: selectedFrequency,
+                      items: ['Monthly', 'Yearly']
+                          .map(
+                            (c) => DropdownMenuItem(value: c, child: Text(c)),
+                          )
+                          .toList(),
+                      onChanged: (v) =>
+                          setModalState(() => selectedFrequency = v!),
+                      decoration: const InputDecoration(labelText: 'Frequency'),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24.h),
+              SizedBox(
+                width: double.infinity,
+                height: 56.h,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (nameController.text.isNotEmpty &&
+                        amountController.text.isNotEmpty) {
+                      final sub = Subscription(
+                        id: const Uuid().v4(),
+                        name: nameController.text,
+                        amount: double.tryParse(amountController.text) ?? 0,
+                        category: selectedCategory,
+                        nextRenewal: selectedDate,
+                        frequency: selectedFrequency,
+                      );
+                      provider.addSubscription(sub);
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('ACTIVATE TRACKING'),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 16.h),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildIndiaTrackerCard(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
@@ -1480,8 +1826,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
     );
   }
 
-  void _simulateScan(BuildContext context, MoneyProvider provider) async {
-    // Show scanning animation
+  void _showScanningDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1504,7 +1849,7 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
                   .shimmer(duration: 1.5.seconds),
               SizedBox(height: 16.h),
               Text(
-                'Scanning Receipt...',
+                'Extracting Data...',
                 style: GoogleFonts.outfit(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w700,
@@ -1515,23 +1860,66 @@ class _MoneyDashboardState extends State<MoneyDashboard> {
         ),
       ),
     );
+  }
 
-    // Simulate OCR processing
-    await Future.delayed(const Duration(seconds: 2));
+  void _handleReceiptScan(BuildContext context, MoneyProvider provider) async {
+    final ImagePicker picker = ImagePicker();
+
+    // Show source picker
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => Container(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'SELECT RECEIPT SOURCE',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w800,
+                fontSize: 12.sp,
+              ),
+            ),
+            SizedBox(height: 24.h),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Camera'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    final XFile? image = await picker.pickImage(source: source);
+    if (image == null) return;
 
     if (!context.mounted) return;
-    Navigator.pop(context); // Close scanning dialog
+    _showScanningDialog(context);
 
-    // Simulated receipt data (German supermarket)
-    final scannedData = {
-      'store': 'REWE',
-      'amount': 23.47,
-      'category': 'Food',
-      'items': ['Milch 1.5%', 'Brot Vollkorn', 'Äpfel 1kg', 'Käse Gouda'],
-    };
+    try {
+      final ocrService = OCRService();
+      final data = await ocrService.scanReceipt(File(image.path));
+      ocrService.dispose();
 
-    // Show parsed receipt with pre-filled expense dialog
-    _showScannedReceiptDialog(context, provider, scannedData);
+      if (!context.mounted) return;
+      Navigator.pop(context); // Close scanning dialog
+
+      _showScannedReceiptDialog(context, provider, data);
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to parse receipt. Try again.')),
+      );
+    }
   }
 
   void _showScannedReceiptDialog(
