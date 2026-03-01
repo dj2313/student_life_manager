@@ -12,6 +12,7 @@ class NotificationService {
   static final NotificationService _notificationService =
       NotificationService._internal();
 
+  @pragma('vm:entry-point')
   factory NotificationService() {
     return _notificationService;
   }
@@ -63,16 +64,16 @@ class NotificationService {
         debugPrint('Timezone successfully set to: $timeZoneName');
       } catch (e) {
         debugPrint(
-          'Timezone "$timeZoneName" not found in DB, falling back to IST (Asia/Kolkata)',
+          'Timezone "$timeZoneName" not found in DB, falling back to UTC',
         );
-        tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+        tz.setLocalLocation(tz.getLocation('UTC'));
       }
     } catch (e) {
       debugPrint('Critical error in timezone initialization: $e');
       // Final safety net fallbacks
       try {
-        tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
-        debugPrint('Defaulted to Asia/Kolkata after failure');
+        tz.setLocalLocation(tz.getLocation('UTC'));
+        debugPrint('Defaulted to UTC after failure');
       } catch (_) {
         tz.setLocalLocation(tz.getLocation('UTC'));
         debugPrint('Defaulted to UTC after double failure');
@@ -85,6 +86,32 @@ class NotificationService {
         debugPrint("Notification clicked: ${response.payload}");
       },
     );
+
+    // Explicitly create notification channels for Android
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidPlugin = flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+
+      await androidPlugin?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'student_life_channel',
+          'Student Life Notifications',
+          description: 'Notifications for tasks and notes',
+          importance: Importance.max,
+        ),
+      );
+
+      await androidPlugin?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'german_vocab_channel',
+          'German Language Prep',
+          description: 'Daily reminders for German learning',
+          importance: Importance.max,
+        ),
+      );
+    }
 
     // Request permissions after initialization
     await requestPermissions();
@@ -208,10 +235,10 @@ class NotificationService {
   }) async {
     if (kIsWeb) return;
 
-    // Truncate ID to 32-bit integer to prevent Android crashes
-    final safeId = id.toSigned(31);
+    // Use a collision-resistant 31-bit positive integer for Android
+    final safeId = id.abs() % 2147483647;
 
-    // Check permission before scheduling
+    // Check basic notification permission
     if (!_permissionsGranted) {
       final granted = await requestPermissions();
       if (!granted) {
@@ -220,32 +247,55 @@ class NotificationService {
       }
     }
 
+    // Check for Exact Alarm permission (Android 12/14+)
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidImplementation = flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+
+      final bool? hasAlarmPermission = await androidImplementation
+          ?.canScheduleExactNotifications();
+
+      if (hasAlarmPermission == false) {
+        debugPrint('Exact alarm permission denied. Opening settings...');
+        await openSettings();
+        return;
+      }
+    }
+
     try {
       final scheduledTZDate = tz.TZDateTime.from(scheduledDate, tz.local);
-
-      // Ensure date is in the future.
       final now = tz.TZDateTime.now(tz.local);
 
       // Audit Debug Prints
       debugPrint("Scheduling notification for: $scheduledDate");
-      debugPrint("Is future? ${scheduledTZDate.isAfter(now)}");
       debugPrint("Current Local Time: $now");
       debugPrint("Scheduled TZ Time: $scheduledTZDate");
 
+      var finalScheduledDate = scheduledTZDate;
+
       if (scheduledTZDate.isBefore(now)) {
-        debugPrint(
-          'Skip scheduling: Date $scheduledDate is in the past (Current: $now)',
-        );
-        return;
+        // If it's less than 1 minute in the past, it might be a race condition from "now" selection.
+        // Schedule it for 5 seconds in the future so it actually fires.
+        if (now.difference(scheduledTZDate).inMinutes < 1) {
+          debugPrint('Date is slightly in the past, adjusting to 5s from now');
+          finalScheduledDate = now.add(const Duration(seconds: 5));
+        } else {
+          debugPrint(
+            'Skip scheduling: Date $scheduledDate is too far in the past',
+          );
+          return;
+        }
       }
 
-      debugPrint('Scheduling notification $safeId for $scheduledTZDate');
+      debugPrint('Scheduling notification $safeId for $finalScheduledDate');
 
       await flutterLocalNotificationsPlugin.zonedSchedule(
         safeId,
         title,
         body,
-        scheduledTZDate,
+        finalScheduledDate,
         NotificationDetails(
           android: AndroidNotificationDetails(
             'student_life_channel',
@@ -280,13 +330,16 @@ class NotificationService {
     required String body,
   }) async {
     if (kIsWeb) return;
+
+    final safeId = id.abs() % 2147483647;
+
     if (!_permissionsGranted) {
       final granted = await requestPermissions();
       if (!granted) return;
     }
 
     await flutterLocalNotificationsPlugin.show(
-      id,
+      safeId,
       title,
       body,
       const NotificationDetails(
@@ -314,9 +367,28 @@ class NotificationService {
   Future<void> scheduleDailyGermanVocab() async {
     if (kIsWeb) return;
 
-    // Check permission before scheduling
+    // Check basic notification permission
     if (!_permissionsGranted) {
       await requestPermissions();
+    }
+
+    // Check for Exact Alarm permission (Android 12/14+)
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidImplementation = flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+
+      final bool? hasAlarmPermission = await androidImplementation
+          ?.canScheduleExactNotifications();
+
+      if (hasAlarmPermission == false) {
+        debugPrint(
+          'Exact alarm permission denied for German Vocab. Opening settings...',
+        );
+        await openSettings();
+        return;
+      }
     }
 
     try {

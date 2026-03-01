@@ -24,7 +24,7 @@ android {
     defaultConfig {
         applicationId = "com.student.studentlife"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 34
         
         // Auto-increment version code based on timestamp
         // This generates a unique version code for each build
@@ -40,6 +40,9 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            
+            // Reference the proguard-rules.pro file we just created
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }

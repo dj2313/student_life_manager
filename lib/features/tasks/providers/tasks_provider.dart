@@ -213,6 +213,7 @@ class TasksProvider with ChangeNotifier {
       createdAt: DateTime.now(),
       isRecurring: true,
       recurrenceInterval: task.recurrenceInterval,
+      shouldNotify: task.shouldNotify,
     );
     addTask(newTask);
   }
