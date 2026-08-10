@@ -63,7 +63,7 @@ Students often need to manage:
 
 | Dashboard        | Academics        | Finance          |
 | ---------------- | ---------------- | ---------------- |
-| ![Dashboard](assets/images/homepage.png) | ![Academics](assets/images/education.png) | ![Finance](assets/images/Finance.png) |
+| ![Dashboard](assets/images/home_page.jpg) | ![Academics](assets/images/education.jpg) | ![Finance](assets/images/Finance.jpg) |
 
 | Residency        | Focus Mode       | Job Tracker      |
 | ---------------- | ---------------- | ---------------- |
