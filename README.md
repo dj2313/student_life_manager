@@ -29,7 +29,7 @@
 > **Android users can already try Student OS.** Download the latest APK from the GitHub Releases page and install it on your device.
 
 
-**Student OS** is an open-source Flutter productivity app designed to help students — especially **international students** — manage university, finances, student jobs, important documents, study sessions and residence-related deadlines from a single dashboard.
+**Student OS** is an open-source Flutter productivity app designed to help students — especially **international students** — manage university, finances, student jobs, important documents, st[...]
 
 Instead of switching between multiple apps, spreadsheets, calendars and notes, Student OS brings the important parts of student life together.
 
@@ -63,11 +63,11 @@ Students often need to manage:
 
 | Dashboard        | Academics        | Finance          |
 | ---------------- | ---------------- | ---------------- |
-| `Add screenshot` | `Add screenshot` | `Add screenshot` |
+| ![Dashboard](assets/images/screenshot-1.png) | ![Academics](assets/images/screenshot-2.png) | ![Finance](assets/images/screenshot-3.png) |
 
 | Residency        | Focus Mode       | Job Tracker      |
 | ---------------- | ---------------- | ---------------- |
-| `Add screenshot` | `Add screenshot` | `Add screenshot` |
+| ![Residency](assets/images/screenshot-4.png) | `Add screenshot` | `Add screenshot` |
 
 ---
 
@@ -512,7 +512,7 @@ Together, they represent the idea behind Student OS:
 
 # 🔎 Project Topics
 
-`flutter` • `dart` • `firebase` • `android` • `student-productivity` • `student-life` • `international-students` • `study-planner` • `student-finance` • `productivity-app` • `mobile-app` • `open-source`
+`flutter` • `dart` • `firebase` • `android` • `student-productivity` • `student-life` • `international-students` • `study-planner` • `student-finance` • `productivity-app` • `[...]`
 
 ---
 
