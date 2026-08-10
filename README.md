@@ -2,6 +2,33 @@
 
 ### Your studies, money, work and student life — in one place.
 
+<p align="center">
+  <strong>📱 Available now for Android</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/dj2313/student_life_manager/releases/tag/v1.0.0">
+    <img src="https://img.shields.io/badge/Download-Android%20APK-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK">
+  </a>
+  <a href="https://github.com/dj2313/student_life_manager/stargazers">
+    <img src="https://img.shields.io/github/stars/dj2313/student_life_manager?style=for-the-badge&logo=github" alt="GitHub Stars">
+  </a>
+  <a href="https://github.com/dj2313/student_life_manager/releases">
+    <img src="https://img.shields.io/github/v/release/dj2313/student_life_manager?include_prereleases&style=for-the-badge" alt="Latest Release">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/dj2313/student_life_manager/releases/tag/v1.0.0"><strong>⬇️ Download Student OS v1.0.0</strong></a>
+  &nbsp;•&nbsp;
+  <a href="https://github.com/dj2313/student_life_manager/issues">Report a Bug</a>
+  &nbsp;•&nbsp;
+  <a href="https://github.com/dj2313/student_life_manager/issues/new">Request a Feature</a>
+</p>
+
+> **Android users can already try Student OS.** Download the latest APK from the GitHub Releases page and install it on your device.
+
+
 **Student OS** is an open-source Flutter productivity app designed to help students — especially **international students** — manage university, finances, student jobs, important documents, study sessions and residence-related deadlines from a single dashboard.
 
 Instead of switching between multiple apps, spreadsheets, calendars and notes, Student OS brings the important parts of student life together.
