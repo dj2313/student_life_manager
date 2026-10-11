@@ -73,13 +73,13 @@ class LandingScreen extends StatelessWidget {
                             padding: EdgeInsets.all(8.r),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? Colors.white.withOpacity(0.03)
+                                  ? Colors.white.withValues(alpha: 0.03)
                                   : Colors.white,
                               borderRadius: BorderRadius.circular(24.r),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(
-                                    isDark ? 0.3 : 0.05,
+                                  color: Colors.black.withValues(
+                                    alpha: isDark ? 0.3 : 0.05,
                                   ),
                                   blurRadius: 40,
                                   offset: const Offset(0, 20),
@@ -98,7 +98,7 @@ class LandingScreen extends StatelessWidget {
                                     return Container(
                                       color: isDark
                                           ? Colors.white10
-                                          : Colors.black.withOpacity(0.02),
+                                          : Colors.black.withValues(alpha: 0.02),
                                       child: const Center(
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
@@ -219,7 +219,7 @@ class LandingScreen extends StatelessWidget {
                 boxShadow: [
                   if (!isDark)
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -251,13 +251,13 @@ class LandingScreen extends StatelessWidget {
               height: 60.h,
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.black.withOpacity(0.04),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(16.r),
                 border: Border.all(
                   color: isDark
                       ? Colors.white12
-                      : Colors.black.withOpacity(0.08),
+                      : Colors.black.withValues(alpha: 0.08),
                 ),
               ),
               child: Center(
