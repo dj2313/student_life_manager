@@ -74,9 +74,13 @@ so you spend less time managing student life and more time living it.
 
 ## Screenshots
 
-| Landing | Dashboard |
+| Dashboard | Academics |
 | --- | --- |
-| ![Landing](https://raw.githubusercontent.com/dj2313/student_life_manager/main/assets/images/landing.png) | ![Dashboard](https://raw.githubusercontent.com/dj2313/student_life_manager/main/assets/images/landing_hero.png) |
+| ![Dashboard](assets/images/home%20page.jpg) | ![Academics](assets/images/education.jpg) |
+
+| Finance | Settings |
+| --- | --- |
+| ![Finance](assets/images/Financial.jpg) | ![Settings](assets/images/settings.jpg) |
 
 <!-- Record a short GIF walkthrough, save it as assets/demo.gif, and uncomment:
 <p align="center">
